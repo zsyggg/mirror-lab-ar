@@ -1,0 +1,21 @@
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+.localized
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
+
+# Sensitive config (API keys are NOT in these, but exclude anyway)
+*.env
+.env.*
+
+# Build artifacts
+dist/

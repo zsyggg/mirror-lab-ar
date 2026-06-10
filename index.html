@@ -1,0 +1,2489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>镜面实验室 | 2026 MINI-GAME</title>
+<style>
+:root{--a:#00f0ff;--a2:#ff6b9d;--a3:#ffd700;--d:#ff4757;--s:#2ed573;--bg:#0a0a12;--p:#111122;--b:#2a2a40;--t:#c8d6e5;--td:#6b7b8d}
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Noto+Sans+SC:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t);font-family:'Noto Sans SC','PingFang SC',sans-serif;overflow:hidden;user-select:none}
+.screen{display:none;position:absolute;top:0;left:0;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;padding:2rem}
+.screen.active{display:flex}
+
+#screen-title{background:radial-gradient(ellipse at center,#1a1040 0%,var(--bg) 70%)}
+.title-glitch{font-family:'Share Tech Mono',monospace;font-size:5rem;color:var(--a);text-shadow:0 0 10px var(--a),0 0 40px var(--a);position:relative;animation:flicker 3s infinite}
+.title-glitch::before,.title-glitch::after{content:attr(data-text);position:absolute;top:0;left:0;width:100%;height:100%}
+.title-glitch::before{color:var(--a2);animation:gl1 2s infinite;clip-path:polygon(0 0,100% 0,100% 35%,0 35%)}
+.title-glitch::after{color:#7b68ee;animation:gl2 2.5s infinite;clip-path:polygon(0 65%,100% 65%,100% 100%,0 100%)}
+@keyframes flicker{0%,100%{opacity:1}50%{opacity:.95}}
+@keyframes gl1{0%,100%{transform:translate(0)}33%{transform:translate(-3px,2px)}66%{transform:translate(3px,-1px)}}
+@keyframes gl2{0%,100%{transform:translate(0)}33%{transform:translate(3px,-2px)}66%{transform:translate(-2px,1px)}}
+.subtitle{font-family:'Share Tech Mono',monospace;color:var(--td);font-size:1.1rem;letter-spacing:.2em;margin:1rem 0 3rem}
+
+.btn{background:transparent;border:2px solid var(--a);color:var(--a);font-family:'Share Tech Mono',monospace;font-size:1.1rem;padding:.75rem 2.5rem;cursor:pointer;letter-spacing:.1em;transition:all .3s}
+.btn:hover:not(:disabled){background:rgba(0,240,255,.1);box-shadow:0 0 20px rgba(0,240,255,.3);transform:translateY(-2px)}
+.btn:disabled{border-color:var(--b);color:var(--td);cursor:not-allowed}
+.btn.sm{font-size:.85rem;padding:.4rem 1.2rem}
+.btn.warn{border-color:var(--a3);color:var(--a3)}
+
+#screen-comic{background:#000}
+#comic-panel{width:100%;height:100%;object-fit:contain;transition:opacity .5s}
+#comic-text{position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);color:var(--a);font-family:'Share Tech Mono',monospace;font-size:1.2rem;text-shadow:0 0 10px var(--a);text-align:center;max-width:80%;padding:1rem 2rem;background:rgba(0,0,0,.7);border-radius:12px;border:1px solid rgba(0,240,255,.2);transition:opacity .5s}
+#comic-skip{position:absolute;top:1rem;right:1.5rem;color:var(--td);font-family:'Share Tech Mono',monospace;font-size:.8rem;cursor:pointer;z-index:10}
+#comic-counter{position:absolute;top:1rem;left:1.5rem;color:var(--td);font-family:'Share Tech Mono',monospace;font-size:.8rem}
+#comic-next{position:absolute;right:1.5rem;bottom:1.5rem;z-index:10;background:rgba(7,12,18,.72);border:1px solid rgba(0,240,255,.26);border-radius:999px;color:var(--a);font-family:'Share Tech Mono',monospace;font-size:.82rem;padding:.55rem 1rem;cursor:pointer;transition:all .2s}
+#comic-next.locked{color:var(--td);border-color:rgba(255,255,255,.12);cursor:default;opacity:.72}
+#comic-next:not(.locked):hover{box-shadow:0 0 16px rgba(0,240,255,.24);transform:translateY(-1px)}
+
+.briefing-box{background:var(--p);border:1px solid var(--b);border-radius:12px;padding:2rem;max-width:600px;width:100%;text-align:left}
+.briefing-box h3{font-family:'Share Tech Mono',monospace;color:var(--a);margin-bottom:1.5rem;padding-bottom:.75rem;border-bottom:1px solid var(--b)}
+.briefing-box h4{color:var(--a2);font-size:.85rem;margin:1rem 0 .25rem}
+.briefing-box p{line-height:1.7;font-size:.93rem}
+.briefing-box .btn{margin-top:1.5rem;display:block;margin-left:auto;margin-right:auto}
+.case-meta{font-family:'Share Tech Mono',monospace;color:var(--a3);background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.22);border-radius:8px;padding:.55rem .75rem;font-size:.74rem;line-height:1.5;margin:.9rem 0}
+.cast-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin:.9rem 0}
+.cast-card{background:rgba(0,240,255,.04);border:1px solid var(--b);border-radius:8px;overflow:hidden;text-align:center;font-size:.72rem;color:var(--td)}
+.cast-card img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block}
+.cast-card b{display:block;color:var(--t);font-family:'Share Tech Mono',monospace;font-size:.72rem;padding:.35rem .2rem .1rem}
+.cast-card span{display:block;padding:0 .2rem .45rem}
+
+/* 3D 探索 */
+#screen-explore3d .hud3d{position:absolute;top:1rem;left:0;right:0;display:flex;justify-content:space-between;padding:0 2rem;font-family:'Share Tech Mono',monospace;font-size:.9rem;color:var(--a);z-index:10;pointer-events:none}
+.hud3d span{text-shadow:0 0 8px var(--a)}
+#crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;pointer-events:none;z-index:10}
+#crosshair::before,#crosshair::after{content:'';position:absolute;background:rgba(0,240,255,.6)}
+#crosshair::before{top:9px;left:0;width:20px;height:2px}
+#crosshair::after{top:0;left:9px;height:20px;width:2px}
+#hint3d{position:absolute;bottom:3rem;left:50%;transform:translateX(-50%);color:var(--a3);font-family:'Share Tech Mono',monospace;font-size:.85rem;text-align:center;padding:.55rem 1.5rem;background:rgba(8,12,18,.82);border:1px solid rgba(255,215,0,.3);border-radius:20px;pointer-events:none;z-index:10;transition:all .3s;max-width:min(720px,88vw);line-height:1.5}
+#hint3d.action{border-color:var(--a);color:var(--a);animation:pulse2 1s infinite}
+@keyframes pulse2{0%,100%{box-shadow:0 0 5px var(--a)}50%{box-shadow:0 0 20px var(--a)}}
+#controls-help{position:absolute;top:4rem;left:1.5rem;color:#d8e6f0;font-size:.72rem;font-family:'Share Tech Mono',monospace;pointer-events:none;z-index:10;line-height:1.7;opacity:.82;background:rgba(7,12,18,.45);border:1px solid rgba(0,240,255,.12);border-radius:8px;padding:.6rem .75rem}
+#action-pad{position:absolute;right:1.5rem;bottom:2rem;display:flex;gap:.6rem;z-index:12}
+#action-pad .btn{font-size:.82rem;padding:.55rem 1rem;background:rgba(7,12,18,.58);backdrop-filter:blur(6px)}
+.scan-chip{display:inline-block;margin-right:.35rem;margin-bottom:.35rem;padding:.22rem .48rem;border:1px solid rgba(0,240,255,.22);border-radius:999px;color:var(--a);font-family:'Share Tech Mono',monospace;font-size:.68rem;background:rgba(0,240,255,.06)}
+.ending-art{width:100%;max-height:260px;object-fit:cover;display:block;border:1px solid var(--b);border-radius:8px;margin:.8rem 0 1rem;box-shadow:0 0 22px rgba(0,240,255,.1)}
+.ending-copy{text-align:left;background:rgba(17,17,34,.72);border:1px solid var(--b);border-radius:10px;padding:1rem;margin-top:1rem}
+.ending-copy p{margin:.55rem 0}
+
+/* 线索弹窗 */
+#clue-pop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:50;backdrop-filter:blur(4px)}
+#clue-pop.hidden{display:none}
+#clue-pop .clue-card{background:linear-gradient(135deg,#111122 0%,#0d0d1f 100%);border:1px solid var(--a);border-radius:16px;padding:2.2rem 2rem 1.8rem;max-width:520px;width:90%;box-shadow:0 0 40px rgba(0,240,255,.12);position:relative;overflow:hidden}
+#clue-pop .clue-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:linear-gradient(180deg,var(--a),var(--a2))}
+#clue-pop .clue-card .clue-header{display:flex;align-items:center;gap:.75rem;margin-bottom:1.2rem}
+#clue-pop .clue-card .clue-badge{font-family:'Share Tech Mono',monospace;font-size:.7rem;color:var(--a3);background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.25);padding:.25rem .6rem;border-radius:20px;letter-spacing:.1em}
+#clue-pop .clue-card .clue-h{font-family:'Share Tech Mono',monospace;color:var(--a);font-size:1.15rem}
+#clue-pop .clue-card .clue-img-wrap{width:100%;max-height:180px;overflow:hidden;border-radius:8px;margin-bottom:1.2rem;border:1px solid var(--b)}
+#clue-pop .clue-card .clue-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+#clue-pop .clue-card .clue-body{color:var(--t);font-size:.92rem;line-height:1.8;margin-bottom:1.5rem}
+#clue-pop .clue-card .clue-body em{color:var(--a3);font-style:normal}
+#clue-pop .clue-card .clue-tags{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1.2rem}
+#clue-pop .clue-card .clue-tag{font-size:.7rem;padding:.2rem .6rem;border-radius:4px;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.15);color:var(--a);font-family:'Share Tech Mono',monospace}
+#clue-pop .clue-card .clue-summary{font-family:'Share Tech Mono',monospace;color:var(--a3);font-size:.8rem;margin-bottom:.8rem;padding:.4rem .8rem;background:rgba(255,215,0,.05);border-left:3px solid var(--a3);line-height:1.6}
+#clue-pop .clue-card .clue-detail{color:var(--td);font-size:.82rem;line-height:1.7;margin-bottom:1rem;max-height:0;overflow:hidden;transition:max-height .5s ease}
+#clue-pop .clue-card .clue-detail.open{max-height:300px}
+#clue-pop .clue-card .detail-toggle{font-family:'Share Tech Mono',monospace;font-size:.75rem;color:var(--a);cursor:pointer;background:none;border:1px solid rgba(0,240,255,.2);padding:.3rem .8rem;border-radius:4px;margin-bottom:1rem;display:inline-block}
+#clue-pop .clue-card .detail-toggle:hover{background:rgba(0,240,255,.08)}
+/* 密码锁 */
+#lock-pop{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:60;backdrop-filter:blur(6px)}
+#lock-pop.hidden{display:none}
+.lock-panel{background:linear-gradient(135deg,#111122,#0a0a18);border:1px solid var(--a);border-radius:16px;padding:2rem;text-align:center;min-width:320px;box-shadow:0 0 60px rgba(0,240,255,.15)}
+.lock-panel h3{font-family:'Share Tech Mono',monospace;color:var(--a);margin-bottom:.5rem;font-size:1.1rem}
+.lock-panel .lock-sub{color:var(--td);font-size:.8rem;margin-bottom:1.5rem}
+.lock-digits{display:flex;gap:.6rem;justify-content:center;margin-bottom:1rem}
+.lock-digit{width:48px;height:56px;background:var(--bg);border:2px solid var(--b);border-radius:8px;font-family:'Share Tech Mono',monospace;font-size:1.5rem;color:var(--a);text-align:center;line-height:52px;transition:all .2s}
+.lock-digit.filled{border-color:var(--a);box-shadow:0 0 10px rgba(0,240,255,.2)}
+.lock-digit.wrong{border-color:var(--d);color:var(--d);animation:shake .4s}
+.lock-digit.ok{border-color:var(--s);color:var(--s)}
+.lock-hint{color:var(--a3);font-size:.75rem;font-family:'Share Tech Mono',monospace;margin-top:.8rem;line-height:1.6}
+.lock-btns{display:flex;gap:.5rem;justify-content:center;margin-top:1rem}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+
+/* 审讯 */
+#screen-interrogate{background:linear-gradient(rgba(10,10,18,.68),rgba(10,10,18,.88)),url('assets/generated/scene-roundtable-tribunal.png') center/cover no-repeat}
+#inter-layout{display:grid;grid-template-columns:1fr 340px;grid-gap:1rem;width:100%;max-width:1180px;height:90vh;grid-template-rows:auto 1fr}
+#inter-hdr{grid-column:1/-1;display:flex;justify-content:space-between;padding:.5rem 0}
+#inter-hdr span{font-family:'Share Tech Mono',monospace;color:var(--a);font-size:.9rem}
+#inter-main{display:grid;grid-template-rows:minmax(260px,1fr) 1fr auto;gap:.6rem;min-height:0;overflow:hidden}
+#roundtable-stage{position:relative;min-height:260px;border:1px solid rgba(0,240,255,.18);border-radius:12px;overflow:hidden;background:linear-gradient(rgba(5,8,14,.18),rgba(5,8,14,.5)),url('assets/generated/scene-roundtable-tribunal.png') center/cover no-repeat;box-shadow:0 0 32px rgba(0,240,255,.08)}
+#roundtable-stage::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 50% 57%,rgba(0,240,255,.18),transparent 28%),linear-gradient(180deg,transparent 0%,rgba(5,8,14,.52) 100%);pointer-events:none}
+.seat{position:absolute;z-index:2;width:128px;border:1px solid rgba(0,240,255,.24);background:rgba(5,8,14,.78);border-radius:10px;padding:.45rem;cursor:pointer;transition:all .2s;backdrop-filter:blur(4px)}
+.seat:hover,.seat.active{border-color:var(--a);box-shadow:0 0 18px rgba(0,240,255,.22);transform:translateY(-2px)}
+.seat.speaking{border-color:var(--a3);box-shadow:0 0 22px rgba(255,215,0,.24)}
+.seat.moran{left:6%;bottom:13%}.seat.lila{left:50%;top:7%;transform:translateX(-50%)}.seat.lila:hover,.seat.lila.active{transform:translateX(-50%) translateY(-2px)}.seat.zero{right:6%;bottom:13%}
+.seat.lila.speaking{transform:translateX(-50%) translateY(-2px)}
+.seat-head{display:flex;gap:.45rem;align-items:center}
+.seat img{width:38px;height:38px;border-radius:50%;object-fit:cover;border:1px solid var(--b)}
+.seat-name{font-family:'Share Tech Mono',monospace;color:#fff;font-size:.74rem}.seat-role{color:var(--td);font-size:.62rem;line-height:1.3}
+.seat-bar{height:5px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:.38rem}.seat-fill{height:100%;width:0;background:linear-gradient(90deg,var(--a),var(--a3),var(--d))}
+.seat-talk{position:absolute;left:50%;bottom:calc(100% + .5rem);transform:translateX(-50%);width:210px;background:rgba(8,12,18,.9);border:1px solid rgba(255,215,0,.28);border-radius:9px;padding:.45rem .55rem;color:#fff;font-size:.7rem;line-height:1.45;text-align:left;box-shadow:0 0 18px rgba(255,215,0,.12);pointer-events:none}
+.seat-talk:empty{display:none}
+.seat-talk::after{content:'';position:absolute;left:50%;bottom:-7px;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:rgba(8,12,18,.9);border-right:1px solid rgba(255,215,0,.28);border-bottom:1px solid rgba(255,215,0,.28)}
+.seat.lila .seat-talk{top:calc(100% + .5rem);bottom:auto}
+.seat.lila .seat-talk::after{top:-7px;bottom:auto;border:0;border-left:1px solid rgba(255,215,0,.28);border-top:1px solid rgba(255,215,0,.28)}
+#table-core{position:absolute;z-index:3;left:50%;top:52%;transform:translate(-50%,-50%);width:min(340px,42vw);min-height:100px;border:1px solid rgba(0,240,255,.32);border-radius:50%;background:radial-gradient(circle,rgba(0,240,255,.18),rgba(5,8,14,.7) 62%,rgba(5,8,14,.88));display:flex;align-items:center;justify-content:center;text-align:center;padding:1rem;box-shadow:0 0 34px rgba(0,240,255,.16)}
+.table-empty{font-family:'Share Tech Mono',monospace;color:var(--td);font-size:.78rem;line-height:1.55}
+.table-evidence{width:140px;border:1px solid rgba(255,215,0,.38);border-radius:8px;background:rgba(17,17,34,.9);overflow:hidden;box-shadow:0 0 22px rgba(255,215,0,.14)}
+.table-evidence img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover}
+.table-evidence b{display:block;color:#fff;font-size:.74rem;padding:.38rem .45rem;line-height:1.25}
+#active-speech{position:absolute;z-index:4;left:50%;bottom:1rem;transform:translateX(-50%);width:min(560px,78%);background:rgba(8,12,18,.86);border:1px solid rgba(0,240,255,.22);border-radius:10px;padding:.75rem 1rem;min-height:64px;backdrop-filter:blur(5px)}
+#active-speech .who{font-family:'Share Tech Mono',monospace;color:var(--a);font-size:.72rem;margin-bottom:.25rem}#active-speech .line{font-size:.88rem;line-height:1.6;color:var(--t)}
+/* 对话记录 */
+#inter-log{background:rgba(17,17,34,.55);border:1px solid var(--b);border-radius:12px;padding:.65rem .8rem;overflow-y:auto;display:flex;flex-direction:column;gap:.35rem}
+.ientry{padding:.55rem .8rem;border-radius:8px;animation:fadeIn .3s;font-size:.85rem;line-height:1.6}
+.ientry.sys{align-self:center;color:var(--td);font-style:italic;font-size:.8rem;padding:.35rem .6rem}
+.ientry.sus{align-self:flex-start;background:rgba(17,17,34,.8);border:1px solid rgba(0,240,255,.15);display:flex;gap:.55rem;max-width:88%}
+.ientry.sus.moran{border-left:3px solid #4da6ff}.ientry.sus.lila{border-left:3px solid #ff6b9d}.ientry.sus.zero{border-left:3px solid #2ed573}
+.ientry.par{align-self:flex-end;background:rgba(255,107,157,.06);border:1px solid rgba(255,107,157,.15);color:var(--a2);font-size:.8rem;max-width:85%;border-right:3px solid var(--a3)}
+.ientry img.iav{width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid var(--b);flex-shrink:0}
+.ientry .inm{font-family:'Share Tech Mono',monospace;font-size:.72rem;margin-bottom:.15rem}
+.ientry.sus.moran .inm{color:#4da6ff}.ientry.sus.lila .inm{color:#ff6b9d}.ientry.sus.zero .inm{color:#2ed573}
+.ientry .itx{line-height:1.55;font-size:.85rem}
+/* 证据条 */
+#evidence-strip{display:flex;gap:.5rem;overflow-x:auto;padding:.4rem 0;scrollbar-width:thin}
+.ev-chip{flex-shrink:0;background:rgba(17,17,34,.9);border:1px solid var(--b);border-radius:8px;padding:.35rem .55rem;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:.35rem;font-size:.72rem;white-space:nowrap}
+.ev-chip:hover{border-color:var(--a3);transform:translateY(-1px)}
+.ev-chip.used{border-color:rgba(255,215,0,.42);background:rgba(255,215,0,.06)}
+.ev-chip img{width:32px;height:20px;border-radius:3px;object-fit:cover}
+/* 右侧面板 */
+#inter-sb{display:flex;flex-direction:column;gap:.6rem;overflow-y:auto}
+.sbs{background:var(--p);border:1px solid var(--b);border-radius:12px;padding:.75rem 1rem}
+.sbs h4{font-family:'Share Tech Mono',monospace;color:var(--a);font-size:.78rem;margin-bottom:.6rem}
+.qbtn{display:block;width:100%;text-align:left;background:transparent;border:1px solid var(--b);color:var(--t);font-family:'Noto Sans SC',sans-serif;font-size:.82rem;padding:.5rem .65rem;border-radius:6px;cursor:pointer;transition:all .2s;margin-bottom:.25rem}
+.qbtn:hover{border-color:var(--a);background:rgba(0,240,255,.05)}
+.qhint{font-size:.72rem;color:var(--td);line-height:1.5;margin-bottom:.45rem}
+.mode-row{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;margin:.45rem 0}
+.mode-btn{background:rgba(7,12,18,.72);border:1px solid var(--b);border-radius:7px;color:var(--td);font-size:.72rem;padding:.42rem .35rem;cursor:pointer;transition:all .2s}
+.mode-btn:hover{border-color:var(--a3);color:var(--t)}
+.mode-btn.sel{border-color:var(--a3);color:var(--a3);background:rgba(255,215,0,.07);box-shadow:0 0 10px rgba(255,215,0,.12)}
+.tbtn{flex:1;display:flex;align-items:center;gap:.5rem;padding:.5rem;background:var(--bg);border:1px solid var(--b);border-radius:8px;cursor:pointer;font-size:.78rem;color:var(--t);transition:all .2s;min-width:0}
+.tbtn:hover{border-color:var(--a)}
+.tbtn.sel{border-color:var(--a);box-shadow:0 0 10px rgba(0,240,255,.15)}
+.tbtn img{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.freeq{display:grid;grid-template-columns:1fr auto;gap:.4rem;margin-top:.4rem}
+.freeq input{min-width:0;background:var(--bg);border:1px solid var(--b);border-radius:6px;color:var(--t);padding:.45rem .55rem;font-size:.8rem}
+.freeq input:focus{outline:none;border-color:var(--a)}
+.voice-row{display:grid;grid-template-columns:auto 1fr;gap:.35rem;align-items:center;color:var(--td);font-size:.72rem;margin:.3rem 0}
+.voice-row select{min-width:0;background:var(--bg);border:1px solid var(--b);border-radius:6px;color:var(--t);padding:.35rem .4rem;font-size:.72rem}
+.voice-row input[type="checkbox"]{accent-color:var(--a)}
+.heat-board{display:flex;flex-direction:column;gap:.35rem}
+.heat-row{display:grid;grid-template-columns:48px 1fr 30px;gap:.35rem;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.68rem;color:var(--td)}
+.heat-name{color:#fff}
+.heat-track{height:6px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.heat-fill{height:100%;background:linear-gradient(90deg,var(--a),var(--a3),var(--a2));transition:width .35s ease}
+.evi{display:flex;align-items:center;gap:.45rem;padding:.38rem .55rem;border-radius:6px;cursor:pointer;font-size:.78rem;border:1px solid transparent;transition:all .2s}
+.evi:hover{border-color:var(--a3);background:rgba(255,215,0,.05)}
+.evi.used{opacity:.4;cursor:default}
+.evi .evic{font-size:1.1rem}
+
+/* 对质按钮行 */
+.confront-row{display:flex;align-items:center;gap:.4rem;padding:.4rem .6rem;animation:fadeIn .3s;background:rgba(255,215,0,.06);border-radius:8px;border:1px dashed rgba(255,215,0,.25)}
+.confront-label{color:var(--a3);font-size:.75rem;font-family:'Share Tech Mono',monospace}
+.confront-btn{padding:.3rem .6rem;border:1px solid var(--a);background:rgba(0,240,255,.08);color:var(--a);border-radius:4px;cursor:pointer;font-size:.72rem;font-family:'Share Tech Mono',monospace}
+.confront-btn:hover{background:rgba(0,240,255,.18);box-shadow:0 0 8px rgba(0,240,255,.2)}
+.confront-skip{padding:.3rem .5rem;border:1px solid var(--b);background:transparent;color:var(--td);border-radius:4px;cursor:pointer;font-size:.72rem}
+#token-display{font-family:'Share Tech Mono',monospace;color:var(--a3);font-size:.9rem}
+.ientry.par.empath{border-left:3px solid #c084fc;background:rgba(192,132,252,.06)}
+.ientry.par.logic{border-left:3px solid #38bdf8;background:rgba(56,189,248,.06)}
+.ientry.par.empath .inm{color:#c084fc}
+.ientry.par.logic .inm{color:#38bdf8}
+.btn-cost{font-size:.62rem;color:var(--a3);margin-left:.25rem;opacity:.7}
+</style>
+</head>
+<body>
+
+<div id="screen-title" class="screen active">
+  <div class="title-glitch" data-text="镜面实验室">镜面实验室</div>
+  <p class="subtitle">MIRROR LAB — 远程侦查推理</p>
+  <button class="btn" onclick="G.startComic()" style="margin-top:1rem">开始调查</button>
+</div>
+
+<div id="screen-comic" class="screen">
+  <img id="comic-panel" src=""><div id="comic-text"></div>
+  <div id="comic-counter">1/5</div><div id="comic-skip" onclick="G.skipComic()">跳过 ▸</div><button id="comic-next" class="locked" onclick="G.nextComic()">朗读中…</button>
+</div>
+
+<div id="screen-briefing" class="screen">
+  <div class="briefing-box">
+    <h3>📋 任务简报 #1947</h3>
+    <h4>📍 地点</h4><p>轨道空间站「赫利俄斯-7」— 量子物理实验舱 C-7</p>
+    <h4>🕐 事件</h4><p>Dr. Yuki 被发现死在密封实验舱中。爆炸后舱内辐射超标，人类无法进入。</p>
+    <h4>🕵️ 操作员</h4><p>唯一现场操作员是一名空间警探。你将通过远程终端操控「空间者1号」进入现场，扫描辐射残影、时间戳和身份痕迹。</p>
+    <h4>👤 嫌疑人</h4><p>🧪 MORAN — 实验室主管<br>🔬 LILA — 研究助手<br>💻 ZERO — 系统工程师</p>
+    <div class="cast-strip">
+      <div class="cast-card"><img src="assets/generated/cartoon-yuki-portrait.png"><b>YUKI</b><span>死者 / 量子医生</span></div>
+      <div class="cast-card"><img src="assets/generated/cartoon-moran-portrait.png"><b>MORAN</b><span>男博士 / 主管</span></div>
+      <div class="cast-card"><img src="assets/generated/cartoon-lila-portrait.png"><b>LILA</b><span>博士助手</span></div>
+      <div class="cast-card"><img src="assets/generated/cartoon-zero-portrait.png"><b>ZERO</b><span>系统工程师</span></div>
+    </div>
+    <h4>🎯 任务</h4><p>扫描现场异常，收集物证。随后审讯三名嫌疑人，找出密室中的真正选择。</p>
+    <div class="case-meta" id="case-seed">CASE SEED: 待抽取 · 四局内隐藏真相不重复</div>
+    <button class="btn" onclick="G.explore3D()">启动空间者1号</button>
+  </div>
+</div>
+
+<!-- 3D 探索 -->
+<div id="screen-explore3d" class="screen" style="padding:0">
+  <div class="hud3d"><span>🤖 空间者1号在线 · C-7 辐射舱</span><span id="hud3d-clues">证据 0/5</span></div>
+  <div id="crosshair"></div>
+  <div id="controls-help">WASD / ↑↓←→ — 移动<br>Space — 扫描<br>E — 取证<br>C — 切镜头<br>F — 全屏</div>
+  <div id="action-pad"><button class="btn sm" id="cam-btn">镜头</button><button class="btn sm" id="scan-btn">扫描</button><button class="btn sm warn" id="use-btn">取证</button></div>
+  <div id="hint3d">遥控空间者1号进入现场，靠近异常后按 Space 扫描…</div>
+</div>
+
+<div id="clue-pop" class="hidden"><div class="clue-card"></div></div>
+
+<div id="lock-pop" class="hidden">
+  <div class="lock-panel">
+    <h3>🔐 保密文件柜</h3>
+    <p class="lock-sub">需要4位数字密码才能打开</p>
+    <div class="lock-digits">
+      <div class="lock-digit" id="ld0">_</div>
+      <div class="lock-digit" id="ld1">_</div>
+      <div class="lock-digit" id="ld2">_</div>
+      <div class="lock-digit" id="ld3">_</div>
+    </div>
+    <p class="lock-hint" id="lock-hint"></p>
+    <div class="lock-btns">
+      <button class="btn sm" onclick="G.lockInput()">确认</button>
+      <button class="btn sm" style="border-color:var(--b);color:var(--td)" onclick="G.lockCancel()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 审讯 -->
+<div id="screen-interrogate" class="screen">
+  <div id="inter-layout">
+    <div id="inter-hdr"><span id="iround">🔍 第 1/6 轮</span><span id="istatus">开始审讯</span><span id="token-display">⚡ 3</span><span id="llm-status">本地AI：检测中</span></div>
+    <div id="inter-main">
+      <div id="roundtable-stage">
+        <button class="seat moran active" data-t="moran"><div class="seat-talk"></div><div class="seat-head"><img src="assets/generated/cartoon-moran-portrait.png"><div><div class="seat-name">MORAN</div><div class="seat-role">实验室主管</div></div></div><div class="seat-bar"><div class="seat-fill"></div></div></button>
+        <button class="seat lila" data-t="lila"><div class="seat-talk"></div><div class="seat-head"><img src="assets/generated/cartoon-lila-portrait.png"><div><div class="seat-name">LILA</div><div class="seat-role">博士助手</div></div></div><div class="seat-bar"><div class="seat-fill"></div></div></button>
+        <button class="seat zero" data-t="zero"><div class="seat-talk"></div><div class="seat-head"><img src="assets/generated/cartoon-zero-portrait.png"><div><div class="seat-name">ZERO</div><div class="seat-role">系统工程师</div></div></div><div class="seat-bar"><div class="seat-fill"></div></div></button>
+        <div id="table-core"><div class="table-empty">选择嫌疑人，提出问题，再把证据推到圆桌中央。</div></div>
+        <div id="active-speech"><div class="who">圆桌记录</div><div class="line">等待第一句盘问。</div></div>
+      </div>
+      <div id="inter-log"></div>
+      <div id="evidence-strip"></div>
+    </div>
+    <div id="inter-sb">
+      <div class="sbs"><h4>🎯 审讯对象</h4>
+        <div style="display:flex;gap:.5rem">
+          <button class="tbtn sel" data-t="moran"><img src="assets/generated/cartoon-moran-portrait.png">MORAN</button>
+          <button class="tbtn" data-t="lila"><img src="assets/generated/cartoon-lila-portrait.png">LILA</button>
+          <button class="tbtn" data-t="zero"><img src="assets/generated/cartoon-zero-portrait.png">ZERO</button>
+        </div>
+        <div class="heat-board" id="suspicion-board" style="margin-top:.55rem"></div>
+      </div>
+      <div class="sbs"><h4>❓ 盘问</h4>
+        <div class="mode-row">
+          <button class="mode-btn sel" data-mode="probe" onclick="G.setInterrogateMode('probe')">套话</button>
+          <button class="mode-btn" data-mode="press" onclick="G.setInterrogateMode('press')">施压</button>
+          <button class="mode-btn" data-mode="trap" onclick="G.setInterrogateMode('trap')">设陷</button>
+        </div>
+        <div class="qhint" id="mode-hint">套话：回答更长，压力较低，适合先摸时间线。</div>
+        <div id="qlist"></div>
+        <div class="freeq"><input id="free-question" placeholder="自由追问：输入关键词或一句话"><button class="btn sm" onclick="G.askFree()">追问</button></div>
+      </div>
+      <div class="sbs"><h4>📎 出示证据</h4><div id="elist"></div></div>
+      <div class="sbs" style="padding:.6rem 1rem"><label class="voice-row"><input type="checkbox" id="voice-enabled" checked> 朗读对白</label><label class="voice-row"><span>音色</span><select id="voice-select"></select></label></div>
+      <button class="btn warn sm" style="width:100%" id="btn-deduce" disabled onclick="G.primaryInterrogateAction()">等待线索</button>
+    </div>
+  </div>
+</div>
+
+<div id="screen-deduce" class="screen">
+  <h2 class="sct">⚡ 最终推论</h2><p class="sdesc">不要只选一个人。把责任核心、密室机制和关键证据拼成完整证据链。</p>
+  <div class="deduce-grid" id="dgrid"></div>
+</div>
+
+<div id="screen-reveal" class="screen">
+  <div id="rv-content" style="max-width:550px;text-align:center;line-height:1.8"></div>
+  <button class="btn warn" style="margin-top:1.5rem" onclick="location.reload()">重新开始</button>
+</div>
+
+<div id="screen-loading" class="screen"><div class="scanline"></div><p id="loading-text"></p></div>
+
+<script type="importmap">
+{ "imports": {
+    "three": "./vendor/three/build/three.module.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// ========== 3D 探索场景 ==========
+const Lab3D = {
+  scene: null, camera: null, renderer: null, clock: null, composer: null,
+  interactives: [], moveState: {}, scanned: new Set(), robot: null,
+  animId: null, particles: null, scanPulse: null, scanTime: 0, currentNear: null,
+  cameraMode: 0, textures: null,
+
+  init(container) {
+    const w = window.innerWidth, h = window.innerHeight;
+    this.dispose();
+    this.interactives = [];
+    this.moveState = {};
+    this.scanned = new Set();
+    this.currentNear = null;
+    this.cameraMode = 0;
+    this.textures = this.createTextures();
+
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(0x111927);
+    this.scene.fog = new THREE.Fog(0x111927, 12, 30);
+
+    this.camera = new THREE.PerspectiveCamera(55, w / h, 0.1, 60);
+    this.camera.position.set(4.8, 7.6, 10.9);
+
+    this.renderer = new THREE.WebGLRenderer({ antialias: true });
+    this.renderer.setSize(w, h);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.35;
+    container.appendChild(this.renderer.domElement);
+
+    this.composer = new EffectComposer(this.renderer);
+    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.composer.addPass(new UnrealBloomPass(new THREE.Vector2(w, h), 0.55, 0.45, 0.82));
+    this.composer.addPass(new OutputPass());
+    this.clock = new THREE.Clock();
+
+    this.buildLighting();
+    this.buildRoom();
+    this.buildDebris();
+    this.robot = this.createRobot();
+    this.robot.position.set(0, 0, 3.7);
+    this.scene.add(this.robot);
+    this.buildInteractiveZones();
+    this.buildParticles();
+    this.bindControls();
+    this.animate();
+  },
+
+  mat(color, opts = {}) {
+    const params = {
+      color,
+      metalness: opts.metalness ?? 0.28,
+      roughness: opts.roughness ?? 0.55,
+      emissive: opts.emissive ?? 0x000000,
+      emissiveIntensity: opts.emissiveIntensity ?? 0,
+      transparent: opts.transparent ?? false,
+      opacity: opts.opacity ?? 1
+    };
+    if (opts.side !== undefined) params.side = opts.side;
+    return new THREE.MeshStandardMaterial(params);
+  },
+
+  createCanvasTexture(draw, w = 512, h = 512) {
+    const canvas = document.createElement('canvas');
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    draw(ctx, w, h);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    tex.needsUpdate = true;
+    return tex;
+  },
+
+  createTextures() {
+    const loader = new THREE.TextureLoader();
+    const loadImageTexture = (src, repeatX = 1, repeatY = 1) => {
+      const tex = loader.load(src);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(repeatX, repeatY);
+      return tex;
+    };
+
+    const floor = loadImageTexture('assets/generated/cartoon-lab-floor-texture.png', 1, 1);
+    const wall = loadImageTexture('assets/generated/cartoon-lab-wall-texture.png', 1, 1);
+    const monitor = loadImageTexture('assets/generated/cartoon-monitor-texture.png');
+
+    const warning = this.createCanvasTexture((ctx,w,h)=>{
+      ctx.fillStyle='#161326'; ctx.fillRect(0,0,w,h);
+      ctx.strokeStyle='#111'; ctx.lineWidth=14; ctx.strokeRect(18,18,w-36,h-36);
+      ctx.strokeStyle='#ffd34d'; ctx.lineWidth=10; ctx.strokeRect(32,32,w-64,h-64);
+      ctx.fillStyle='#61ff7c'; ctx.beginPath(); ctx.arc(w/2,150,54,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle='#111'; ctx.lineWidth=7; ctx.stroke();
+      ctx.fillStyle='#111'; for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(w/2,150);ctx.arc(w/2,150,76,i*Math.PI*2/3-.32,i*Math.PI*2/3+.32);ctx.closePath();ctx.fill();}
+      ctx.fillStyle='#ffd34d'; ctx.fillRect(82,238,348,20);
+      ctx.fillStyle='#ff5b8d'; ctx.fillRect(118,270,276,16);
+    },512,320);
+
+    return {floor, wall, warning, monitor};
+  },
+
+  buildLighting() {
+    this.scene.add(new THREE.HemisphereLight(0xd8f7ff, 0x46214f, 3.0));
+    this.scene.add(new THREE.AmbientLight(0x74829d, 1.15));
+    const dir = new THREE.DirectionalLight(0xffffff, 2.7);
+    dir.position.set(4, 9, 5);
+    dir.castShadow = true;
+    dir.shadow.mapSize.set(2048, 2048);
+    this.scene.add(dir);
+    [[0x00f0ff,0,3.4,-2.4,16],[0xff4da6,3.8,2.1,1.8,7],[0x65ff75,-3.8,2,1.2,12]].forEach(([c,x,y,z,i])=>{
+      const p = new THREE.PointLight(c, i, 9);
+      p.position.set(x,y,z);
+      this.scene.add(p);
+    });
+  },
+
+  buildRoom() {
+    const R = 10, H = 3.2;
+    const floorMat = this.mat(0xffffff, {metalness:.05, roughness:.72, emissive:0x1a1630, emissiveIntensity:.12});
+    floorMat.map = this.textures.floor;
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(R, R), floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    this.scene.add(floor);
+
+    this.addCartoonFloorEffects();
+
+    const wallMat = this.mat(0xffffff, {metalness:.04, roughness:.82, emissive:0x201a3b, emissiveIntensity:.16, transparent:true, opacity:.94, side:THREE.DoubleSide});
+    wallMat.map = this.textures.wall;
+    [
+      {p:[0,H/2,-R/2],s:[R,H,.08]},
+      {p:[-R/2,H/2,0],s:[.08,H,R]},
+      {p:[R/2,H/2,0],s:[.08,H,R]}
+    ].forEach(w=>{
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(...w.s), wallMat);
+      wall.position.set(...w.p);
+      wall.receiveShadow = true;
+      this.scene.add(wall);
+    });
+
+    this.addWallPanel({pos:[-3.35,2,-4.94],rot:[0,0,0],size:[1.55,.95],texture:this.textures.warning});
+    this.addWallPanel({pos:[4.94,2.05,.85],rot:[0,-Math.PI/2,0],size:[2.15,1.35],texture:this.textures.monitor});
+    this.addWallPanel({pos:[-4.94,1.9,-1.2],rot:[0,Math.PI/2,0],size:[1.2,.82],texture:this.textures.warning,opacity:.84});
+
+    for(let i=-3;i<=3;i+=1.5){
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(.06,3.05,.1), this.mat(0x14101f,{emissive:0x5a276d,emissiveIntensity:.22,roughness:.8}));
+      rib.position.set(i,1.55,-4.9); this.scene.add(rib);
+    }
+
+    const trimMat = this.mat(0x64ff77, {emissive:0x44ff55, emissiveIntensity:.95, metalness:.05, roughness:.45});
+    [[0,.05,-5],[0,.05,5],[-5,.05,0],[5,.05,0]].forEach(([x,y,z],idx)=>{
+      const trim = new THREE.Mesh(new THREE.BoxGeometry(idx<2?9.4:.045,.04,idx<2?.045:9.4), trimMat);
+      trim.position.set(x,y,z);
+      this.scene.add(trim);
+    });
+
+    const win = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.6), this.mat(0x071122, {emissive:0x132b55, emissiveIntensity:.8, transparent:true, opacity:.78, side:THREE.DoubleSide}));
+    win.position.set(0, 2.35, -4.94);
+    this.scene.add(win);
+
+    const scanGate = new THREE.Mesh(new THREE.TorusGeometry(1.35, .025, 12, 72), this.mat(0xffd166, {emissive:0xffad33, emissiveIntensity:.65}));
+    scanGate.position.set(.35, 1.7, -2.1);
+    scanGate.rotation.x = Math.PI / 2;
+    this.scene.add(scanGate);
+    this._ring = scanGate;
+  },
+
+  addCartoonFloorEffects() {
+    const puddleMat = new THREE.MeshBasicMaterial({color:0x72ff63, transparent:true, opacity:.34, side:THREE.DoubleSide, depthWrite:false});
+    [
+      [0.35,-2.1,2.45,1.2,.15],
+      [-2.4,1.1,1.3,.55,-.5],
+      [2.8,2.15,1.05,.5,.55],
+      [-3.15,-2.8,.82,.42,.25]
+    ].forEach(([x,z,w,h,r])=>{
+      const p = new THREE.Mesh(new THREE.CircleGeometry(1, 48), puddleMat.clone());
+      p.scale.set(w,h,1);
+      p.rotation.set(-Math.PI/2,0,r);
+      p.position.set(x,.032,z);
+      this.scene.add(p);
+    });
+
+    const crackMat = this.mat(0x111018,{emissive:0x7cff6b,emissiveIntensity:.18,roughness:1});
+    [
+      [0.1,-1.6,2.2,.045,.7],[-.9,-2.45,1.6,.04,-.3],[1.15,-2.75,1.8,.04,.25],
+      [-2.7,.4,1.4,.035,.9],[2.7,1.2,1.6,.035,-.55],[-3.6,-3.2,1.2,.032,.2]
+    ].forEach(([x,z,l,w,r])=>{
+      const c = new THREE.Mesh(new THREE.BoxGeometry(w,.018,l), crackMat);
+      c.position.set(x,.048,z);
+      c.rotation.y = r;
+      this.scene.add(c);
+    });
+  },
+
+  addWallPanel({pos, rot, size, texture, opacity=.92}) {
+    const mat = new THREE.MeshBasicMaterial({map:texture, transparent:true, opacity, side:THREE.DoubleSide, toneMapped:false});
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(size[0], size[1]), mat);
+    p.position.set(...pos);
+    p.rotation.set(...rot);
+    this.scene.add(p);
+    return p;
+  },
+
+  buildDebris() {
+    const dark = this.mat(0x191525, {metalness:.08, roughness:.86, emissive:0x321243, emissiveIntensity:.16});
+    for (let i = 0; i < 56; i++) {
+      const s = .06 + Math.random() * .2;
+      const geo = Math.random() > .5 ? new THREE.BoxGeometry(s, s * .4, s * 1.4) : new THREE.CylinderGeometry(s * .35, s * .35, s * .25, 6);
+      const piece = new THREE.Mesh(geo, dark);
+      piece.position.set(.35 + (Math.random() - .5) * 3.4, .05, -2.1 + (Math.random() - .5) * 2.6);
+      piece.rotation.set(Math.random() * .7, Math.random() * Math.PI, Math.random() * .7);
+      piece.castShadow = true;
+      this.scene.add(piece);
+    }
+
+    for(let i=0;i<5;i++){
+      const crack = new THREE.Mesh(new THREE.BoxGeometry(.05,.016,.85+Math.random()*.8), this.mat(0x100a16,{emissive:0x6fff7d,emissiveIntensity:.2}));
+      crack.position.set(.35+(Math.random()-.5)*3,.035,-2.1+(Math.random()-.5)*2.4);
+      crack.rotation.y = Math.random()*Math.PI;
+      this.scene.add(crack);
+    }
+
+    for(let i=0;i<8;i++){
+      const cable = new THREE.Mesh(new THREE.TorusGeometry(.36+Math.random()*.22,.022,8,32,Math.PI*1.45), this.mat(0x111018,{emissive:0xff45a6,emissiveIntensity:.12,roughness:.8}));
+      cable.position.set(-1.2+Math.random()*2.7,.055,-2.9+Math.random()*1.7);
+      cable.rotation.set(Math.PI/2,0,Math.random()*Math.PI);
+      this.scene.add(cable);
+    }
+
+    for(let i=0;i<9;i++){
+      const glass = new THREE.Mesh(new THREE.CircleGeometry(.08+Math.random()*.12,3), this.mat(0xb8eaff,{transparent:true,opacity:.28,metalness:.1,roughness:.05,side:THREE.DoubleSide}));
+      glass.position.set(-2.2+Math.random()*2.2,.045,-2.8+Math.random()*2.1);
+      glass.rotation.set(-Math.PI/2,0,Math.random()*Math.PI);
+      this.scene.add(glass);
+    }
+  },
+
+  createRobot() {
+    const bot = new THREE.Group();
+    bot.name = 'Spacefarer-1';
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(.34, .38, 8, 18), this.mat(0xf7fff0, {metalness:.05, roughness:.5}));
+    body.position.y = .55;
+    body.castShadow = true;
+    bot.add(body);
+
+    const face = new THREE.Mesh(new THREE.BoxGeometry(.56, .26, .08), this.mat(0x151226, {emissive:0x0b2940, emissiveIntensity:.6, metalness:.02}));
+    face.position.set(0, .72, -.31);
+    bot.add(face);
+    [-.16, .16].forEach(x=>{
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(.055, 16, 12), this.mat(0x66f7ff, {emissive:0x00eaff, emissiveIntensity:1.8, metalness:.05}));
+      eye.position.set(x, .74, -.36);
+      bot.add(eye);
+    });
+    const rearFace = face.clone();
+    rearFace.position.z = .31;
+    bot.add(rearFace);
+    [-.16, .16].forEach(x=>{
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(.055, 16, 12), this.mat(0x66f7ff, {emissive:0x00eaff, emissiveIntensity:1.8, metalness:.05}));
+      eye.position.set(x, .74, .36);
+      bot.add(eye);
+    });
+
+    const belly = new THREE.Mesh(new THREE.CircleGeometry(.13, 24), this.mat(0x65ff75, {emissive:0x47ff55, emissiveIntensity:.75, side:THREE.DoubleSide}));
+    belly.position.set(0, .48, -.35);
+    bot.add(belly);
+
+    [-.3, .3].forEach(x=>{
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(.13, .13, .12, 18), this.mat(0x17111f, {metalness:.08, roughness:.72}));
+      wheel.position.set(x, .18, 0);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.castShadow = true;
+      bot.add(wheel);
+    });
+
+    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(.018, .018, .34, 8), this.mat(0x9fb4c8, {metalness:.4}));
+    antenna.position.set(.18, 1.02, 0);
+    antenna.rotation.z = -.35;
+    bot.add(antenna);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.055, 12, 8), this.mat(0xff6b9d, {emissive:0xff4a8a, emissiveIntensity:1.2}));
+    bulb.position.set(.24, 1.18, 0);
+    bot.add(bulb);
+
+    const scanner = new THREE.Mesh(new THREE.RingGeometry(.22, .28, 32), this.mat(0x00f0ff, {emissive:0x00f0ff, emissiveIntensity:1.1, transparent:true, opacity:.5, side:THREE.DoubleSide}));
+    scanner.position.set(0, .2, -.45);
+    scanner.rotation.x = Math.PI / 2;
+    bot.add(scanner);
+    this._robotScanner = scanner;
+
+    this.scanPulse = new THREE.Mesh(new THREE.RingGeometry(.55, .62, 64), this.mat(0x00f0ff, {emissive:0x00f0ff, emissiveIntensity:1.3, transparent:true, opacity:0, side:THREE.DoubleSide}));
+    this.scanPulse.rotation.x = -Math.PI / 2;
+    this.scene.add(this.scanPulse);
+    return bot;
+  },
+
+  buildInteractiveZones() {
+    const zones = [
+      {zone:'device', label:'量子设备核心', pos:[.35,.08,-2.1], color:0x00f0ff, prop:'reactor'},
+      {zone:'console', label:'删改终端', pos:[-3.55,.08,1.2], color:0x3dffaf, prop:'console'},
+      {zone:'cabinet', label:'保密文件柜', pos:[-4.05,.08,-3.45], color:0xffa24a, prop:'cabinet'},
+      {zone:'monitor', label:'密室压力监控', pos:[4.05,.08,.1], color:0x69a7ff, prop:'monitor'},
+      {zone:'residue', label:'Yuki 的最后标记', pos:[1.8,.08,2.7], color:0xff6b9d, prop:'residue'}
+    ];
+    zones.forEach(z=>this.addZone(z));
+  },
+
+  addZone(z) {
+    const color = z.color;
+    const base = new THREE.Group();
+    base.position.set(...z.pos);
+    this.scene.add(base);
+
+    const ring = new THREE.Mesh(new THREE.RingGeometry(.48, .56, 48), this.mat(color, {emissive:color, emissiveIntensity:.55, transparent:true, opacity:.42, side:THREE.DoubleSide}));
+    ring.rotation.x = -Math.PI / 2;
+    ring.userData = {zone:z.zone, label:z.label, scanned:false, baseY:z.pos[1], color};
+    base.add(ring);
+    this.interactives.push(ring);
+
+    const beacon = new THREE.Mesh(new THREE.OctahedronGeometry(.14), this.mat(color, {emissive:color, emissiveIntensity:1.05, transparent:true, opacity:.55}));
+    beacon.position.y = .85;
+    beacon.userData = ring.userData;
+    base.add(beacon);
+    ring.userData.beacon = beacon;
+
+    if(z.prop==='reactor') {
+      const baseCyl = new THREE.Mesh(new THREE.CylinderGeometry(.82,.96,.24,40), this.mat(0x2d3c4f,{metalness:.55,roughness:.42}));
+      baseCyl.position.y = .18;
+      baseCyl.castShadow = true;
+      base.add(baseCyl);
+      const brokenArcA = new THREE.Mesh(new THREE.TorusGeometry(.82,.035,10,50,Math.PI*1.22), this.mat(0xffd166,{emissive:0xff9f1f,emissiveIntensity:.65,metalness:.28}));
+      brokenArcA.position.y = .92;
+      brokenArcA.rotation.x = Math.PI/2;
+      brokenArcA.rotation.z = .35;
+      base.add(brokenArcA);
+      const brokenArcB = brokenArcA.clone();
+      brokenArcB.rotation.z = 2.65;
+      brokenArcB.scale.set(.72,.72,.72);
+      base.add(brokenArcB);
+      for(let i=0;i<4;i++){
+        const rod = new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.95,8), this.mat(0x8da1b3,{metalness:.6,roughness:.34}));
+        const a=i*Math.PI/2+.35;
+        rod.position.set(Math.cos(a)*.52,.62,Math.sin(a)*.52);
+        rod.rotation.z = .25*Math.sin(i);
+        base.add(rod);
+      }
+      const core = new THREE.Mesh(new THREE.SphereGeometry(.28, 28, 18), this.mat(0x88f6ff, {emissive:0x00eaff, emissiveIntensity:1.8}));
+      core.position.y = .95;
+      base.add(core);
+      this._core = core;
+    }
+    if(z.prop==='console') {
+      const desk = new THREE.Mesh(new THREE.BoxGeometry(1.35,.18,.82), this.mat(0x31445a,{metalness:.45}));
+      desk.position.y = .42;
+      desk.rotation.y = -.15;
+      base.add(desk);
+      const screen = new THREE.Mesh(new THREE.PlaneGeometry(.9,.55), this.mat(0x04352b, {emissive:0x00ff99, emissiveIntensity:.75, transparent:true, opacity:.9, side:THREE.DoubleSide}));
+      screen.position.set(0,.78,-.28);
+      screen.rotation.x = -.25;
+      base.add(screen);
+      for(let i=0;i<7;i++){
+        const key = new THREE.Mesh(new THREE.BoxGeometry(.08,.025,.05), this.mat(0x0b1520,{emissive: i%3===0?0x00ff99:0x000000, emissiveIntensity:.45}));
+        key.position.set(-.36+i*.12,.54,.12);
+        base.add(key);
+      }
+    }
+    if(z.prop==='cabinet') {
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(.78,1.45,.52), this.mat(0x394152, {metalness:.45}));
+      cab.position.y = .78;
+      cab.castShadow = true;
+      base.add(cab);
+      const seam = new THREE.Mesh(new THREE.BoxGeometry(.025,1.18,.03), this.mat(0x101823,{emissive:0xff7a3a,emissiveIntensity:.18}));
+      seam.position.set(.02,.8,-.275);
+      base.add(seam);
+      const lock = new THREE.Mesh(new THREE.BoxGeometry(.16,.1,.04), this.mat(0xffa24a,{emissive:0xff6a2f,emissiveIntensity:.8}));
+      lock.position.set(.22,.82,-.29);
+      base.add(lock);
+    }
+    if(z.prop==='monitor') {
+      const stand = new THREE.Mesh(new THREE.BoxGeometry(.12,.9,.12), this.mat(0x2b3b4f,{metalness:.5}));
+      stand.position.y = .55;
+      base.add(stand);
+      const monMat = this.mat(0x082344, {emissive:0x1264aa, emissiveIntensity:.72, side:THREE.DoubleSide});
+      monMat.map = this.textures.monitor;
+      const mon = new THREE.Mesh(new THREE.PlaneGeometry(1.34,.84), monMat);
+      mon.position.y = 1;
+      mon.rotation.y = -Math.PI / 2;
+      base.add(mon);
+    }
+    if(z.prop==='residue') {
+      const note = new THREE.Mesh(new THREE.PlaneGeometry(.64,.42), this.mat(0xf5d9bb, {roughness:.92, side:THREE.DoubleSide}));
+      note.rotation.x = -Math.PI / 2;
+      note.position.y = .015;
+      base.add(note);
+      const pen = new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.52,8), this.mat(0x263142,{metalness:.35}));
+      pen.position.set(.34,.07,.12);
+      pen.rotation.set(Math.PI/2,0,.65);
+      base.add(pen);
+    }
+  },
+
+  buildParticles() {
+    const c = 260, g = new THREE.BufferGeometry(), p = new Float32Array(c * 3), v = new Float32Array(c * 3);
+    for (let i = 0; i < c; i++) {
+      p[i*3]=(Math.random()-.5)*9; p[i*3+1]=.2+Math.random()*3.4; p[i*3+2]=(Math.random()-.5)*9;
+      v[i*3]=(Math.random()-.5)*.01; v[i*3+1]=.004+Math.random()*.008; v[i*3+2]=(Math.random()-.5)*.01;
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    this.particles = new THREE.Points(g, new THREE.PointsMaterial({color:0xb9f6ff,size:.035,transparent:true,opacity:.34,sizeAttenuation:true,blending:THREE.AdditiveBlending,depthWrite:false}));
+    this._pVel = v;
+    this.scene.add(this.particles);
+  },
+
+  bindControls() {
+    this._onKeyDown = e => {
+      const k = e.code;
+      if(k==='KeyW'||k==='ArrowUp')this.moveState.forward=true;
+      if(k==='KeyS'||k==='ArrowDown')this.moveState.backward=true;
+      if(k==='KeyA'||k==='ArrowLeft')this.moveState.left=true;
+      if(k==='KeyD'||k==='ArrowRight')this.moveState.right=true;
+      if(k==='Space'){e.preventDefault();this.scan();}
+      if(k==='KeyE')this.tryInteract();
+      if(k==='KeyC')this.cycleCamera();
+      if(k==='KeyF')this.toggleFullscreen();
+    };
+    this._onKeyUp = e => {
+      const k = e.code;
+      if(k==='KeyW'||k==='ArrowUp')this.moveState.forward=false;
+      if(k==='KeyS'||k==='ArrowDown')this.moveState.backward=false;
+      if(k==='KeyA'||k==='ArrowLeft')this.moveState.left=false;
+      if(k==='KeyD'||k==='ArrowRight')this.moveState.right=false;
+    };
+    document.addEventListener('keydown', this._onKeyDown);
+    document.addEventListener('keyup', this._onKeyUp);
+    this._onResize = () => {
+      const rw=window.innerWidth,rh=window.innerHeight;
+      this.camera.aspect=rw/rh;this.camera.updateProjectionMatrix();
+      this.renderer.setSize(rw,rh);this.composer.setSize(rw,rh);
+    };
+    window.addEventListener('resize', this._onResize);
+    this._onScanClick = () => this.scan();
+    this._onUseClick = () => this.tryInteract();
+    this._onCamClick = () => this.cycleCamera();
+    document.getElementById('scan-btn')?.addEventListener('click', this._onScanClick);
+    document.getElementById('use-btn')?.addEventListener('click', this._onUseClick);
+    document.getElementById('cam-btn')?.addEventListener('click', this._onCamClick);
+    document.getElementById('crosshair').style.display='none';
+  },
+
+  toggleFullscreen() {
+    const el = document.getElementById('screen-explore3d');
+    if(!document.fullscreenElement) el.requestFullscreen?.();
+    else document.exitFullscreen?.();
+  },
+
+  cycleCamera() {
+    this.cameraMode = (this.cameraMode + 1) % 3;
+    const names = ['跟随镜头','俯视现场','近距取证'];
+    this.setHint(`镜头切换：${names[this.cameraMode]}`, true);
+  },
+
+  nearestUncollected(max = 1.65) {
+    if(!this.robot) return null;
+    let nearest = null, nd = Infinity;
+    for(const obj of this.interactives){
+      if(G.clues3d.includes(obj.userData.zone)) continue;
+      const world = new THREE.Vector3();
+      obj.getWorldPosition(world);
+      const d = this.robot.position.distanceTo(world);
+      if(d < nd){ nd = d; nearest = obj; }
+    }
+    return nearest && nd <= max ? {obj:nearest, distance:nd} : null;
+  },
+
+  scan() {
+    this.scanTime = .65;
+    const near = this.nearestUncollected(2.25);
+    if(!near){
+      this.setHint('扫描完成：附近没有可解析异常。', false);
+      SFX.click();
+      return;
+    }
+    near.obj.userData.scanned = true;
+    this.scanned.add(near.obj.userData.zone);
+    G.markScanned3D(near.obj.userData.zone);
+    this.setHint(`扫描锁定：${near.obj.userData.label}。按 E 取证。`, true);
+    SFX.clue();
+  },
+
+  tryInteract() {
+    const near = this.nearestUncollected(2.25);
+    if(!near) return;
+    const data = near.obj.userData;
+    if(!data.scanned){
+      this.setHint(`异常未解析：先按 Space 扫描 ${data.label}`, true);
+      return;
+    }
+    if(data.zone==='cabinet'){ G.openLock(); return; }
+    G.pickClue3D(data.zone);
+  },
+
+  setHint(text, action=false) {
+    const hint = document.getElementById('hint3d');
+    hint.textContent = text;
+    hint.classList.toggle('action', action);
+  },
+
+  update(dt, t) {
+    const mv = new THREE.Vector3();
+    if(this.moveState.forward) mv.z -= 1;
+    if(this.moveState.backward) mv.z += 1;
+    if(this.moveState.left) mv.x -= 1;
+    if(this.moveState.right) mv.x += 1;
+    if(mv.lengthSq() > 0 && this.robot) {
+      mv.normalize();
+      this.robot.position.addScaledVector(mv, 3.15 * dt);
+      this.robot.position.x = Math.max(-4.35, Math.min(4.35, this.robot.position.x));
+      this.robot.position.z = Math.max(-4.35, Math.min(4.35, this.robot.position.z));
+      const targetRot = Math.atan2(mv.x, mv.z);
+      this.robot.rotation.y = THREE.MathUtils.lerp(this.robot.rotation.y, targetRot, Math.min(1, dt * 12));
+      this.robot.position.y = Math.sin(t * 9) * .018;
+    }
+
+    if(this.robot && this.camera) {
+      const offsets = [
+        new THREE.Vector3(4.8, 7.6, 7.2),
+        new THREE.Vector3(.2, 10.8, 7.4),
+        new THREE.Vector3(2.2, 3.6, 3.5)
+      ];
+      const lookHeights = [.55, .25, .7];
+      const desired = this.robot.position.clone().add(offsets[this.cameraMode] || offsets[0]);
+      this.camera.position.lerp(desired, Math.min(1, dt * 3.5));
+      this.camera.lookAt(this.robot.position.x, lookHeights[this.cameraMode] ?? .55, this.robot.position.z);
+    }
+
+    this.interactives.forEach(mk=>{
+      const collected = G.clues3d.includes(mk.userData.zone);
+      const scanned = mk.userData.scanned;
+      mk.rotation.z += dt * (scanned ? 1.2 : .45);
+      mk.material.opacity = collected ? .08 : scanned ? .78 : .28 + Math.sin(t * 3) * .08;
+      mk.material.emissiveIntensity = collected ? .05 : scanned ? 1.2 : .45;
+      if(mk.userData.beacon){
+        mk.userData.beacon.rotation.y += dt * 1.8;
+        mk.userData.beacon.position.y = .9 + Math.sin(t * 2.5 + mk.position.x) * .08;
+        mk.userData.beacon.visible = !collected;
+      }
+    });
+
+    if(this._ring) this._ring.rotation.z += dt * .8;
+    if(this._core) this._core.material.emissiveIntensity = 1.4 + Math.sin(t * 3) * .4;
+    if(this._robotScanner) this._robotScanner.material.opacity = .38 + Math.sin(t * 5) * .16;
+
+    if(this.scanPulse && this.robot) {
+      this.scanPulse.position.set(this.robot.position.x, .04, this.robot.position.z);
+      if(this.scanTime > 0) {
+        const age = .65 - this.scanTime;
+        const s = 1 + age * 4.2;
+        this.scanPulse.scale.set(s, s, s);
+        this.scanPulse.material.opacity = Math.max(0, .7 - age);
+        this.scanTime -= dt;
+      } else {
+        this.scanPulse.material.opacity = 0;
+      }
+    }
+
+    if(this.particles){
+      const pa=this.particles.geometry.attributes.position.array,v=this._pVel;
+      for(let i=0;i<pa.length/3;i++){
+        pa[i*3]+=v[i*3]; pa[i*3+1]+=v[i*3+1]; pa[i*3+2]+=v[i*3+2];
+        if(pa[i*3+1]>3.8) pa[i*3+1]=.15;
+        if(Math.abs(pa[i*3])>5) pa[i*3]=(Math.random()-.5)*9;
+        if(Math.abs(pa[i*3+2])>5) pa[i*3+2]=(Math.random()-.5)*9;
+      }
+      this.particles.geometry.attributes.position.needsUpdate = true;
+    }
+
+    const near = this.nearestUncollected(2.25);
+    this.currentNear = near?.obj?.userData?.zone || null;
+    if(near) {
+      const d = near.obj.userData;
+      this.setHint(d.scanned ? `按 E — 记录 ${d.label}` : `按 Space — 扫描 ${d.label}`, true);
+    } else if(G.clues3d.length >= Object.keys(ZONES).length) {
+      this.setHint('证据链已足够。点击这里进入审讯 →', true);
+      const h = document.getElementById('hint3d');
+      h.onclick = () => { Lab3D.dispose(); G.interrogate(); };
+      h.style.pointerEvents = 'auto';
+      h.style.cursor = 'pointer';
+    } else {
+      this.setHint('移动空间者1号，寻找地面上的异常扫描环…', false);
+    }
+  },
+
+  animate() {
+    this.animId=requestAnimationFrame(()=>this.animate());
+    const dt=Math.min(this.clock.getDelta(),0.1);
+    const t=performance.now()*0.001;
+    this.update(dt, t);
+    this.composer.render();
+  },
+
+  dispose(){
+    if(this.animId) cancelAnimationFrame(this.animId);
+    this.animId = null;
+    if(this._onKeyDown) document.removeEventListener('keydown', this._onKeyDown);
+    if(this._onKeyUp) document.removeEventListener('keyup', this._onKeyUp);
+    if(this._onResize) window.removeEventListener('resize', this._onResize);
+    if(this._onScanClick) document.getElementById('scan-btn')?.removeEventListener('click', this._onScanClick);
+    if(this._onUseClick) document.getElementById('use-btn')?.removeEventListener('click', this._onUseClick);
+    if(this._onCamClick) document.getElementById('cam-btn')?.removeEventListener('click', this._onCamClick);
+    const h = document.getElementById('hint3d');
+    if(h){h.onclick=null;h.style.pointerEvents='none';h.style.cursor='default';}
+    if(this.renderer?.domElement?.parentElement) this.renderer.domElement.remove();
+    if(this.renderer) this.renderer.dispose();
+    this.renderer = null;
+  }
+};
+
+// ========== 音效 ==========
+const SFX={
+  ctx:null, init(){this.ctx=new(window.AudioContext||window.webkitAudioContext)()},
+  p(f,ty,d,v=.06,dl=0){if(!this.ctx)this.init();const t=this.ctx.currentTime+dl,o=this.ctx.createOscillator(),g=this.ctx.createGain();o.type=ty;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(this.ctx.destination);o.start(t);o.stop(t+d)},
+  start(){this.p(440,'sine',.15,.05);setTimeout(()=>this.p(660,'sine',.15,.04),120);setTimeout(()=>this.p(880,'sine',.2,.05),240)},
+  click(){this.p(600,'sine',.08,.03)},
+  clue(){this.p(800,'sine',.08,.04);setTimeout(()=>this.p(1200,'sine',.1,.05),80);setTimeout(()=>this.p(1600,'sine',.12,.04),160)},
+  lie(){this.p(80,'sawtooth',.25,.06);setTimeout(()=>this.p(120,'sawtooth',.2,.05),150)},
+  pair(){this.p(500,'sine',.1,.03);setTimeout(()=>this.p(700,'sine',.1,.03),100)},
+  win(){[523,659,784,1047].forEach((f,i)=>setTimeout(()=>this.p(f,'sine',.3,.07),i*120))},
+  lose(){this.p(80,'square',.5,.15);setTimeout(()=>this.p(60,'square',.4,.12),200)},
+  comic(){this.p(200,'sine',.2,.04);setTimeout(()=>this.p(300,'sine',.15,.04),150)}
+};
+
+const VOICE={
+  voices:[], selectedURI:'', enabled:true, initialized:false,
+  load(){
+    this.voices = speechSynthesis?.getVoices?.() || [];
+    this.renderSelect();
+  },
+  init(){
+    if(this.initialized)return;
+    this.initialized=true;
+    this.enabled = localStorage.getItem('mirrorlab-voice-enabled') !== '0';
+    this.selectedURI = localStorage.getItem('mirrorlab-voice-uri') || '';
+    this.load();
+    const enabled=document.getElementById('voice-enabled');
+    if(enabled){
+      enabled.checked=this.enabled;
+      enabled.onchange=()=>{this.enabled=enabled.checked;localStorage.setItem('mirrorlab-voice-enabled',this.enabled?'1':'0');};
+    }
+  },
+  renderSelect(){
+    const sel=document.getElementById('voice-select');
+    if(!sel)return;
+    const current=sel.value || this.selectedURI;
+    const zh=this.voices.filter(v=>/zh|Chinese|Mandarin|Ting|Mei|Sinji|Yu|Xiaoxiao|Yunxi/i.test(`${v.lang} ${v.name}`));
+    const list=zh.length?zh:this.voices;
+    sel.innerHTML='';
+    list.forEach(v=>{
+      const opt=document.createElement('option');
+      opt.value=v.voiceURI; opt.textContent=`${v.name} · ${v.lang}`;
+      sel.appendChild(opt);
+    });
+    if(current && [...sel.options].some(o=>o.value===current)) sel.value=current;
+    this.selectedURI=sel.value||this.selectedURI;
+    sel.onchange=()=>{this.selectedURI=sel.value;localStorage.setItem('mirrorlab-voice-uri',this.selectedURI);};
+  },
+  pick(role){
+    this.load();
+    if(this.selectedURI){
+      const chosen=this.voices.find(v=>v.voiceURI===this.selectedURI);
+      if(chosen)return chosen;
+    }
+    const zh = this.voices.filter(v=>/zh|Chinese|Ting|Mei|Sinji|Yu/i.test(`${v.lang} ${v.name}`));
+    const list = zh.length ? zh : this.voices;
+    const idx = {detective:0,moran:1,lila:2,zero:3,narrator:0}[role] ?? 0;
+    return list[idx % Math.max(list.length,1)] || null;
+  },
+  profile(role){
+    return {
+      detective:{rate:.88,pitch:.78},
+      narrator:{rate:.78,pitch:.9},
+      moran:{rate:.86,pitch:.62},
+      lila:{rate:.94,pitch:1.12},
+      zero:{rate:.9,pitch:.86}
+    }[role] || {rate:.9,pitch:1};
+  }
+};
+speechSynthesis?.addEventListener?.('voiceschanged',()=>VOICE.load());
+setTimeout(()=>VOICE.init(),250);
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function esc(t){return String(t||'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function speechHoldMs(t,min=0){return Math.min(18000,Math.max(min,5200,(t||'').length*260))}
+function spk(t,roleOrEnd='detective',opts={}){
+  const minMs=speechHoldMs(t,opts.minMs||0);
+  const maxMs=opts.maxMs||Math.max(minMs+4200,9000);
+  if(!window.speechSynthesis||!VOICE.enabled)return wait(minMs);
+  const role = typeof roleOrEnd === 'string' ? roleOrEnd : 'detective';
+  const onend = typeof roleOrEnd === 'function' ? roleOrEnd : null;
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  const p=VOICE.profile(role);
+  u.lang='zh-CN';u.rate=p.rate;u.pitch=p.pitch;
+  const v=VOICE.pick(role); if(v) u.voice=v;
+  return new Promise(resolve=>{
+    let speechDone=false,minDone=false,done=false;
+    const finish=()=>{
+      if(done||!speechDone||!minDone)return;
+      done=true;if(onend)onend();resolve();
+    };
+    u.onend=()=>{speechDone=true;finish()};
+    u.onerror=()=>{speechDone=true;finish()};
+    speechSynthesis.speak(u);
+    setTimeout(()=>{minDone=true;finish()},minMs);
+    setTimeout(()=>{speechDone=true;finish()},maxMs);
+  });
+}
+
+// ========== 漫画 ==========
+const COMIC=[
+  {img:'assets/generated/cartoon-detective-operator.png',txt:'轨道空间站「赫利俄斯-7」封锁后，只有一名空间警探接入远程调查终端。',tts:'空间站封锁后，只有一名空间警探接入远程调查终端。'},
+  {img:'assets/generated/cartoon-lab-explosion.png',txt:'深夜。Yuki 医生所在的 C-7 量子实验舱发生爆炸。舱门从内部锁死，爆炸后她被发现死亡。',tts:'深夜，Yuki医生所在的量子实验舱发生爆炸。舱门从内部锁死，爆炸后她被发现死亡。'},
+  {img:'assets/generated/cartoon-spacefarer-entry.png',txt:'人类不能进入辐射舱。警探启动「空间者1号」，让它进入爆炸后的密室。',tts:'警探启动空间者一号，让它进入爆炸后的密室。'},
+  {img:'assets/generated/cartoon-monitor-texture.png',txt:'监控没有拍到任何人进出，但系统留下了一段被剪掉的五秒钟。',tts:'监控没有拍到任何人进出，但系统留下了被剪掉的五秒钟。'},
+  {img:'assets/generated/cartoon-mirror-reveal.png',txt:'最危险的证词来自死者本人：如果第二个我醒来，不要让任何人带走它。',tts:'最危险的证词来自死者本人。'}
+];
+
+// ========== 线索数据 ==========
+const ZONES={
+  device:{id:'device',label:'⚛️ 量子设备残骸',
+    clue:{icon:'💾',badge:'物证 · 现场残留',title:'异常能量读数',
+      img:'assets/generated/evidence-reactor-core.png',
+      tags:['辐射扫描','安全阈值','协议篡改'],
+      summary:'设备记录了 1.7 秒超高能脉冲——安全阈值的 37 倍。实验协议被偷偷改过。',
+      detail:'量子设备记录了 <em>1.7 秒</em> 超高能级脉冲——达到安全阈值的 <em>37 倍</em>。实验协议在 23:35 被人从「量子退相干标准测试」改为「<em>镜像纠缠协议</em>」。修改者：Yuki。审批者署名：MORAN。'}},
+  console:{id:'console',label:'🖥️ 操作终端',
+    clue:{icon:'📧',badge:'物证 · 数据痕迹',title:'被删改的终端记录',
+      img:'assets/generated/evidence-terminal-glitch.png',
+      tags:['监控缺失','日志删除','Project Mirror'],
+      summary:'「Project Mirror」警告闪烁。监控被精确剪辑了 5 秒。当晚日志被删。',
+      detail:'终端上「Project Mirror」警告仍在闪烁。监控录像在 <em>23:47:22 至 23:47:27</em> 存在精确 5 秒静默——经鉴定为手动剪辑。MORAN 在 <em>23:50</em> 以管理员权限删除了当晚实验日志。'}},
+  cabinet:{id:'cabinet',label:'🔐 保密文件柜',
+    clue:{icon:'🔒',badge:'物证 · 机密档案',title:'实验授权文件',
+      img:'assets/generated/evidence-authorization-file.png',
+      tags:['未授权实验','MORAN签名','风险报告'],
+      summary:'柜中藏着一份未走正式流程的实验授权书。上面有 MORAN 的亲笔签名。',
+      detail:'柜中的机密文件揭示：镜像纠缠协议的实验授权书 <em>从未走正式审批流程</em>。授权书上 MORAN 的签名笔迹潦草，似在慌乱中签署。附带的内部风险评估报告被标注为「<em>不建议执行</em>」，却被忽略。文件底部有一行手写备注：「<em>Yuki 要求今晚执行。不能等。</em>」'}},
+  monitor:{id:'monitor',label:'📺 监控录像',
+    clue:{icon:'👁️',badge:'物证 · 物理异常',title:'密室压力异常',
+      img:'assets/generated/evidence-surveillance-gap.png',
+      tags:['密封舱','双重占位','物理不可能'],
+      summary:'监控确认无人出入。但压力传感器检测到密封舱内同时存在两个等量物体。',
+      detail:'监控确认：23:46 Yuki 独自进入 → 舱门密封 → 23:52 MORAN 开门发现尸体。期间 <em>无人出入</em>。但压力传感器在 23:49 记录到一次 <em>「瞬时双重占位」</em>——仿佛密封舱内同时存在两个等量物体。系统标记为「传感器故障」。'}},
+  residue:{id:'residue',label:'🩷 Yuki 的最后标记',
+    clue:{icon:'🧬',badge:'物证 · 主动选择',title:'手写终止指令',
+      img:'assets/generated/evidence-yuki-note.png',
+      tags:['自毁指令','伦理备忘','不是求救'],
+      summary:'地面残片上不是求救信息，而是一串手写终止协议。Yuki 可能预设了自己的毁灭。',
+      detail:'空间者1号在烧焦纸片上复原出一行字：「如果它醒来，不要让任何人带走它。」下面是 Yuki 的手写终止指令。她知道实验会创造第二个自己，也知道这个结果不能离开 C-7。'}}
+};
+const CABINET_CODE='0724';
+const CABINET_HINT='提示：空间者1号扫描到纸片日期「07/24 — 第一次镜像稳定日」';
+
+const TRUTH_IDS=['moran','lila','zero','self'];
+function shuffleTruthDeck(){
+  const deck=[...TRUTH_IDS];
+  for(let i=deck.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  return deck;
+}
+function readTruthDeck(){
+  try{
+    const parsed=JSON.parse(localStorage.getItem('mirrorlab-truth-deck')||'[]');
+    const filtered=parsed.filter((id,i)=>TRUTH_IDS.includes(id)&&parsed.indexOf(id)===i);
+    return filtered.length?filtered:shuffleTruthDeck();
+  }catch(e){return shuffleTruthDeck();}
+}
+function drawTruthBranch(){
+  let deck=readTruthDeck();
+  if(!deck.length)deck=shuffleTruthDeck();
+  const truth=deck.shift();
+  localStorage.setItem('mirrorlab-truth-deck',JSON.stringify(deck));
+  localStorage.setItem('mirrorlab-last-truth',truth);
+  return {truth,remaining:deck.length,drawIndex:TRUTH_IDS.length-deck.length};
+}
+const PRIVATE_CLUES={
+  moran:{
+    device:{title:'主管权限强制升频',summary:'第二轮复扫发现，爆炸前最后一次升频来自 MORAN 的主管令牌。',tags:['主管令牌','强制升频','时间矛盾'],detail:'核心残骸里残留一条被掩盖的指令：23:46:58，MORAN 的主管令牌把安全阈值从 12 改到 37。这个时间早于他声称“只是在门外等待解锁”的说法。'},
+    cabinet:{title:'项目封口协议',summary:'保险柜夹层有一份封口协议，收益人是 MORAN。',tags:['封口协议','项目声誉','直接动机'],detail:'文件显示，只要 Project Mirror 被认定为“死者个人越权”，MORAN 可以保住项目经费。Yuki 若公开违规审批，他会失去主管职位。'},
+    console:{title:'删除日志的真实目标',summary:'MORAN 删除的不是事故报告，而是自己的升频审批链。',tags:['删改日志','审批链','谎言'],detail:'恢复日志后发现，MORAN 删除的片段并非监控，而是审批链。ZERO 只剪掉了影像，主管令牌的轨迹被 MORAN 单独擦除。'}
+  },
+  lila:{
+    residue:{title:'争吵后的手写便条',summary:'Yuki 的碎纸里提到 LILA 因署名问题在 23:31 爆发争吵。',tags:['署名争议','争吵','助手动机'],detail:'纸片复原出一段话：“LILA 说如果我拿走她的名字，她会让我也失去自己的名字。”这解释了她为什么一直回避最后一次见面。'},
+    cabinet:{title:'试剂柜缺失记录',summary:'LILA 的实验试剂少了一支，可制造传感器误报。',tags:['试剂缺失','传感器污染','作案机会'],detail:'第二层柜门内侧有 LILA 的指纹。缺失试剂能让压力传感器短暂读出“双重占位”，这和她声称“只负责记录”的说法不一致。'},
+    monitor:{title:'门外第二个影子',summary:'缺失的五秒里，门外短暂出现的是 LILA，不是 Yuki。',tags:['影像复原','门外影子','谎言'],detail:'影像增强后，门外的轮廓带有 LILA 的圆形护目镜。她看见了事故，却没有呼救。'}
+  },
+  zero:{
+    console:{title:'系统桥离线窗口',summary:'ZERO 留出的五秒离线窗口正好覆盖安全门锁死。',tags:['离线窗口','系统权限','直接机会'],detail:'ZERO 声称剪掉影像是为了防止恐慌，但系统桥记录显示，他同时把安全门置为“不可救援”。Yuki 在这五秒内无法逃离。'},
+    monitor:{title:'门禁没有伪造，但救援被延迟',summary:'门确实没开过，因为 ZERO 让救援请求排队到事故后。',tags:['救援延迟','门禁队列','技术谎言'],detail:'门禁记录没有造假，这正是 ZERO 的陷阱。他没有进入密室，而是让密室保持成立。'},
+    device:{title:'算力挪用痕迹',summary:'实验所需算力被 ZERO 挪走，设备因此进入不稳定补偿。',tags:['算力挪用','设备失稳','动机'],detail:'Yuki 已经发现 ZERO 倒卖算力。若她活着，ZERO 会第一个暴露。'}
+  },
+  self:{
+    residue:{title:'终止协议完整版',summary:'Yuki 的笔记不是求救，是预设的自我终止流程。',tags:['自我终止','伦理选择','隐藏真相'],detail:'完整笔记写着：“如果第二个我拥有同等记忆，它不是怪物；真正危险的是我们会让谁活下来。”她选择把结果封死在 C-7。'},
+    device:{title:'协议由 Yuki 自己改写',summary:'核心协议最后一次改写来自 Yuki 本人的生物签名。',tags:['生物签名','主动执行','非外部谋杀'],detail:'第二轮复扫确认，镜像纠缠协议的最终参数并非 MORAN 或 ZERO 写入，而是 Yuki 用自己的生物签名执行。'},
+    monitor:{title:'双重占位不是伪造',summary:'压力异常真实存在，舱内短暂出现两个 Yuki。',tags:['双重占位','镜像结果','密室解释'],detail:'传感器并未故障。那五秒里舱内有两个质量相同的人，随后其中一个执行了终止流程。'}
+  }
+};
+const DEFAULT_PRIVATE={
+  device:{title:'二次辐射谱线',summary:'二次扫描发现爆炸波形被人刻意调整过。',tags:['二次扫描','波形异常'],detail:'波形不是普通事故，它对应某个人在事故前隐藏的选择。'},
+  console:{title:'隐藏通讯缓存',summary:'终端缓存里留着未发出的争吵消息。',tags:['隐藏消息','时间线'],detail:'缓存显示 Yuki 在事故前和至少一名成员发生激烈争执。'},
+  cabinet:{title:'夹层日记',summary:'柜子夹层藏着 Yuki 的短日记，记录每个人的矛盾点。',tags:['日记','矛盾点'],detail:'Yuki 记录了 MORAN 的项目压力、LILA 的署名怨恨，以及 ZERO 的系统违规。'},
+  monitor:{title:'影像增强片段',summary:'被剪掉的五秒恢复出新的时间矛盾。',tags:['影像增强','不在场证明'],detail:'影像本身不完整，但足以证明至少有一人的说法和时间线不一致。'},
+  residue:{title:'残留笔迹补全',summary:'烧焦纸片补全出一段新的警告。',tags:['笔迹','警告'],detail:'纸片上写着：“不要相信第一轮供词，真正的原因藏在第二次扫描里。”'}
+};
+const ZONE_ART={
+  device:'assets/generated/evidence-reactor-core.png',
+  console:'assets/generated/evidence-terminal-glitch.png',
+  cabinet:'assets/generated/evidence-authorization-file.png',
+  monitor:'assets/generated/evidence-surveillance-gap.png',
+  residue:'assets/generated/evidence-yuki-note.png',
+  zero:'assets/generated/evidence-zero-access.png'
+};
+function currentClue(zid){
+  const phase = G?.phase || 1;
+  if(phase===1) return {...ZONES[zid].clue,id:`r1-${zid}`,zone:zid,phase:1,name:ZONES[zid].clue.title,desc:ZONES[zid].clue.summary};
+  const p = PRIVATE_CLUES[G.truth]?.[zid] || DEFAULT_PRIVATE[zid] || ZONES[zid].clue;
+  const img = p.img || (G.truth==='zero' && (zid==='console'||zid==='monitor') ? ZONE_ART.zero : ZONES[zid].clue.img);
+  return {...ZONES[zid].clue,...p,id:`r2-${zid}`,zone:zid,phase:2,name:p.title||ZONES[zid].clue.title,desc:p.summary||ZONES[zid].clue.summary,img};
+}
+function caseInsight(truth){
+  return {
+    moran:'矛盾集中在 MORAN：他说自己只在门外等待，但二次线索指向主管令牌、升频审批和删除审批链。',
+    lila:'矛盾集中在 LILA：她回避争吵、试剂柜和门外影像，像是在把“目击”伪装成“害怕”。',
+    zero:'矛盾集中在 ZERO：他没进密室，但他能让救援窗口消失，让密室保持成立。',
+    self:'矛盾不在某个外部凶手，而在 Yuki 的主动选择：她预设了终止协议，其他人只是掩盖或误导。'
+  }[truth] || '';
+}
+
+const LOCAL_AI={
+  proxyEndpoint:'http://localhost:8787/api/deepseek',
+  proxyHealth:'http://localhost:8787/health',
+  ollamaEndpoint:'http://localhost:11434',
+  model:'deepseek-v4-flash',
+  ollamaModel:'qwen3:latest',
+  provider:'rules',
+  available:false,
+  checked:false,
+  async check(){
+    const badge=document.getElementById('llm-status');
+    try{
+      const res=await fetch(this.proxyHealth,{signal:AbortSignal.timeout(1300)});
+      const data=await res.json();
+      if(data?.ok){
+        this.provider='deepseek';this.model=data.model||this.model;this.available=true;this.checked=true;
+        if(badge)badge.textContent=`AI：DeepSeek ${this.model}`;
+        return true;
+      }
+    }catch(e){}
+    try{
+      const res=await fetch(`${this.ollamaEndpoint}/api/tags`,{signal:AbortSignal.timeout(1300)});
+      const data=await res.json();
+      const models=(data.models||[]).map(m=>m.name);
+      this.available=models.length>0;this.provider=this.available?'ollama':'rules';
+      if(models.includes(this.ollamaModel)) this.ollamaModel=this.ollamaModel;
+      else if(models.length) this.ollamaModel=models[0];
+      if(badge)badge.textContent=this.available?`AI：本地 ${this.ollamaModel}`:'AI：规则兜底';
+    }catch(e){
+      this.available=false;this.provider='rules';
+      if(badge)badge.textContent='AI：规则兜底';
+    }
+    this.checked=true;
+    return this.available;
+  },
+  truthBrief(truth){
+    return {
+      moran:'MORAN 是本局真相核心：他用主管令牌强制升频并删除审批链，试图把事故包装成 Yuki 个人越权。',
+      lila:'LILA 是本局真相核心：她因署名争执有强动机，接触过试剂柜，并在缺失五秒中目击/介入关键现场。',
+      zero:'ZERO 是本局真相核心：他没有进密室，但通过系统桥延迟救援、制造五秒离线窗口，让密室保持成立。',
+      self:'本局真相是 Yuki 的自我终止协议：其他人都在掩盖自身违规，但真正反转是 Yuki 主动把实验结果封死在 C-7。'
+    }[truth] || '';
+  },
+  suspectBrief(suspect,truth){
+    if(truth===suspect)return '你知道自己最危险。你要撒谎、转移、缩小责任；被关键证据击中时可以露出恐惧或愤怒，但不要立刻完整认罪。';
+    if(truth==='self')return '你不是直接凶手，但你隐瞒了自己的违规和恐惧。你可以说真话片段，也可以保护自己，但不要主动替玩家总结最终答案。';
+    return '你不是本局最终凶手，但你仍有动机和违规。你会保护自己，说半真半假的话；不要帮玩家直接锁定真凶。';
+  },
+  roleKnowledge(suspect,truth){
+    const ownSecrets={
+      moran:'你确实违规签过授权，也删过部分日志；你最怕项目审批链曝光。你倾向怀疑 ZERO 动过系统，或者把责任推给 Yuki 的冒进。',
+      lila:'你和 Yuki 因署名爆发过争吵，也在事故后逃离过；你最怕别人把恐惧当成杀意。你倾向怀疑 MORAN 的审批和 ZERO 的系统权限。',
+      zero:'你剪过五秒影像，也挪用过算力；你最怕系统桥记录暴露。你倾向怀疑 MORAN 的主管令牌，或者说 Yuki 自己要求离线窗口。'
+    };
+    const guilty={
+      moran:{
+        moran:'你本局是真相核心：你用主管令牌强制升频，并删除审批链。你要把它说成 Yuki 的越权和普通项目掩盖。',
+        lila:'你不知道 MORAN 强制升频。你只知道自己和 Yuki 争吵后逃跑了，因此会害怕被当成凶手。',
+        zero:'你不知道 MORAN 的完整审批链，但你知道有人用主管权限擦过痕迹；你会暗示“主管令牌”可疑。'
+      },
+      lila:{
+        lila:'你本局是真相核心：你因署名争执介入关键五秒，并用恐惧、目击和混乱掩盖自己的行为。你要把重点推向 MORAN 的签名或 ZERO 的系统。',
+        moran:'你不知道 LILA 的关键介入。你只知道自己签了违规授权，所以会把她描述为惊慌目击者。',
+        zero:'你不知道 LILA 的完整动机。你只看到门外影像有异常，会暗示“有人在门外”。'
+      },
+      zero:{
+        zero:'你本局是真相核心：你制造五秒离线窗口并延迟救援。你要反复强调门禁没被伪造、你没进密室，把矛盾推给主管权限。',
+        moran:'你不知道 ZERO 延迟救援。你只知道系统日志缺失，会怀疑 ZERO 但不掌握证据。',
+        lila:'你不知道 ZERO 的系统桥操作。你只知道那五秒让你害怕，会用“我看见了异常”保护自己。'
+      },
+      self:{
+        moran:'本局没有外部直接凶手。你不知道 Yuki 的完整自我终止计划，只知道实验太危险，所以你删日志保护项目。',
+        lila:'本局没有外部直接凶手。你不知道 Yuki 的完整计划，只知道自己看见了两个 Yuki 的迹象，因恐惧逃跑。',
+        zero:'本局没有外部直接凶手。你知道 Yuki 留过终止指令，但你不敢承认自己按指令隐藏了影像。'
+      }
+    };
+    return guilty[truth]?.[suspect] || ownSecrets[suspect] || '你只知道自己的违规和恐惧，不知道完整真相。';
+  },
+  caseRules(truth){
+    return {
+      moran:'真实核心是 MORAN 的主管令牌强制升频。公开线索只显示他违规审批，第二轮线索才会暴露升频令牌和删除审批链。',
+      lila:'真实核心是 LILA 因署名争执产生强烈怨恨，并用试剂污染/门外影像制造时间线错觉。她会把恐惧伪装成目击创伤。',
+      zero:'真实核心是 ZERO 用系统桥制造五秒离线窗口并延迟救援。他没进密室，所以他会反复强调门禁记录没有伪造。',
+      self:'真实核心是 Yuki 自我终止。三名嫌疑人都在掩盖自己的违规，但都不是直接凶手；不要让任何嫌疑人主动说出完整真相。'
+    }[truth] || '';
+  },
+  modeInstruction(mode){
+    return {
+      probe:'套话：语气克制，让角色多解释时间线和背景；回答可以更完整，但不要直接认罪。',
+      press:'施压：警探语气强硬，角色更防御、更短促，关键矛盾被击中时更容易露出破绽。',
+      trap:'设陷：警探故意留下模糊空间诱导角色补细节，角色可能撒更具体的谎或反咬别人。'
+    }[mode] || '套话：语气克制，先收集信息。';
+  },
+  buildPrompt({suspect,question,key,evidence,truth,phase,pressure,history,mode='probe'}){
+    const s=SUS[suspect];
+    const mood=pressure>=70?'高压，句子变短，会失控或反击':pressure>=40?'紧张上升，开始露出矛盾':'表面镇定，仍在试探警探掌握了多少';
+    return `你在中文科幻推理小游戏《镜面实验室》中扮演圆桌嫌疑人。只输出该嫌疑人的一句完整中文回答，至少20个汉字，不要旁白，不要解释规则，不要超过95字。\n角色：${s.name}，${s.title}。性格：${s.style} 动机：${s.motive}\n你知道的信息：${this.roleKnowledge(suspect,truth)}\n你的立场：${this.suspectBrief(suspect,truth)}\n当前阶段：第${phase}轮盘问。紧张度：${pressure}%，状态：${mood}。\n警探策略：${this.modeInstruction(mode)}\n玩家问题：${question}\n问题类型：${key}\n玩家已推到圆桌上的证据：${evidence||'无'}\n近期圆桌记录：${history||'无'}\n回答要求：可以撒谎、回避、反问、只承认小违规；真凶被击中时露出破绽但不完整认罪；无辜者也会自保和说半真话；绝对不要说“作为AI”“设定”“这不一定正确”。`;
+  },
+  async suspectReply(args){
+    if(!this.checked) await this.check();
+    if(!this.available) return null;
+    try{
+      if(this.provider==='deepseek'){
+        const res=await fetch(this.proxyEndpoint,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:this.model,messages:[
+            {role:'system',content:'你是游戏内角色扮演引擎，只能输出角色台词。'},
+            {role:'user',content:this.buildPrompt(args)}
+          ],temperature:.72,max_tokens:140})
+        });
+        if(!res.ok)return null;
+        const data=await res.json();
+        const msg=data?.choices?.[0]?.message||{};
+        return this.clean(msg.content||msg.reasoning_content||data?.reply||'');
+      }
+      const res=await fetch(`${this.ollamaEndpoint}/api/generate`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:this.ollamaModel,prompt:this.buildPrompt(args),stream:false,options:{temperature:.72,top_p:.9,repeat_penalty:1.08,num_predict:120}})
+      });
+      if(!res.ok)return null;
+      const data=await res.json();
+      return this.clean(data.response||'');
+    }catch(e){return null;}
+  },
+  async confrontReply(args){
+    if(!this.checked)await this.check();
+    const s=SUS[args.speaker];
+    const t=SUS[args.target];
+    const prompt=`你在中文科幻推理游戏《镜面实验室》中扮演圆桌嫌疑人。你刚听到另一个嫌疑人的回答，要做出对质反应。只输出一句中文，至少16个汉字，不超过80字。\n角色：${s.name}，${s.title}。性格：${s.style}\n你知道的信息：${this.roleKnowledge(args.speaker,args.truth)}\n你的立场：${this.suspectBrief(args.speaker,args.truth)}\n你刚听到 ${t.name} 说：「${args.targetReply}」\n当前阶段：第${args.phase}轮。\n近期记录：${args.history||'无'}\n要求：直接对 ${t.name} 的话做出反应。你可以质疑、反驳、补充自己的版本、指出他的漏洞、或者装不在意。不要泄露完整真相。`;
+    try{
+      if(this.provider==='deepseek'){
+        const res=await fetch(this.proxyEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:this.model,messages:[{role:'system',content:'你是圆桌推理游戏的对质引擎，只能输出角色台词。'},{role:'user',content:prompt}],temperature:.78,max_tokens:110})});
+        if(!res.ok)return null;
+        const data=await res.json();
+        return this.clean(data?.choices?.[0]?.message?.content||'');
+      }
+      if(this.provider==='ollama'){
+        const res=await fetch(`${this.ollamaEndpoint}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:this.ollamaModel,prompt,stream:false,options:{temperature:.78,num_predict:100}})});
+        if(!res.ok)return null;
+        const data=await res.json();
+        return this.clean(data.response||'');
+      }
+    }catch(e){return null;}
+  },
+
+  clean(text){
+    return (text||'')
+      .replace(/<think>[\s\S]*?<\/think>/g,'')
+      .replace(/^（[\s\S]{0,160}?）\s*/,'')
+      .replace(/^["“]|["”]$/g,'')
+      .replace(/作为AI|作为系统工程师，?/g,'')
+      .trim()
+      .slice(0,190)||null;
+  },
+  async assistantReview({phase,truth,roundNotes,evidence,pressure}){
+    if(!this.checked) await this.check();
+    const prompt=`你是推理游戏里的AI助手。请根据玩家已问到的信息，用中文给出不泄露真凶的圆桌复盘，最多110字。\n本局暗线只供你判断不要明说：${this.caseRules(truth)}\n阶段：${phase}\n证据：${evidence||'无'}\n圆桌记录：${roundNotes||'无'}\n紧张度：${JSON.stringify(pressure)}\n要求：只指出“哪几处说法值得二轮搜查/继续追问”，不要直接说谁是真凶，不要说隐藏真相。`;
+    if(this.provider==='deepseek'){
+      try{
+        const res=await fetch(this.proxyEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:this.model,messages:[{role:'system',content:'你是游戏内推理助手，不能泄题。'},{role:'user',content:prompt}],temperature:.45,max_tokens:150})});
+        if(res.ok){const data=await res.json();const msg=data?.choices?.[0]?.message||{};return this.clean(msg.content||msg.reasoning_content||data?.reply||'');}
+      }catch(e){}
+    }
+    return null;
+  },
+  async tacticalReview({phase,truth,target,action,question,evidence,reply,roundNotes,pressure}){
+    if(!this.checked) await this.check();
+    if(!this.available)return null;
+    const prompt=`你是推理游戏里的AI侦探助手。请对刚刚这一步圆桌行动做非剧透漏洞复盘，最多85字，只输出一句中文。\n本局暗线只供判断，不得明说真凶或隐藏真相：${this.caseRules(truth)}\n阶段：${phase}\n目标嫌疑人：${SUS[target]?.name||target}\n行动：${action}\n玩家问题：${question||'无'}\n出示证据：${evidence||'无'}\n嫌疑人回答：${reply||'无'}\n近期圆桌记录：${roundNotes||'无'}\n紧张度：${JSON.stringify(pressure)}\n要求：指出“哪句话/哪张证据和时间线、动机、权限或密室机制不一致”，给下一步追问方向；不要说“真凶是”、不要泄露结局。`;
+    try{
+      if(this.provider==='deepseek'){
+        const res=await fetch(this.proxyEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:this.model,messages:[{role:'system',content:'你是游戏内推理助手，不能泄题，只能给战术复盘。'},{role:'user',content:prompt}],temperature:.42,max_tokens:120})});
+        if(res.ok){const data=await res.json();const msg=data?.choices?.[0]?.message||{};return this.clean(msg.content||msg.reasoning_content||data?.reply||'');}
+      }
+      const res=await fetch(`${this.ollamaEndpoint}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:this.ollamaModel,prompt,stream:false,options:{temperature:.42,top_p:.9,repeat_penalty:1.08,num_predict:95}})});
+      if(!res.ok)return null;
+      const data=await res.json();
+      return this.clean(data.response||'');
+    }catch(e){return null;}
+  },
+  buildEvidencePrompt({suspect,evidence,truth,phase,pressure,gain,history,mode='probe'}){
+    const s=SUS[suspect];
+    const hit=gain>0?'这张证据击中了你的核心矛盾，你会紧张、防御、转移话题或只承认较小违规。':'这张证据没有直接击中你，你可以稳住、反问警探，或把矛盾推回其他嫌疑人。';
+    return `你在中文科幻推理小游戏《镜面实验室》中扮演圆桌嫌疑人。警探刚把一张证据甩到你面前。只输出该嫌疑人的一句中文反应，至少20个汉字，不要旁白，不超过90字。\n角色：${s.name}，${s.title}。性格：${s.style} 动机：${s.motive}\n你知道的信息：${this.roleKnowledge(suspect,truth)}\n你的立场：${this.suspectBrief(suspect,truth)}\n当前阶段：第${phase}轮。紧张度：${pressure}%。证据压力：${hit}\n警探策略：${this.modeInstruction(mode)}\n证据名称：${evidence?.name||'未知证据'}\n证据内容：${evidence?.desc||'无'}\n近期圆桌记录：${history||'无'}\n回答要求：像狼人杀被甩证据后的即时反应；可以撒谎、回避、反咬或承认小违规；不要完整认罪，不要说“作为AI”“设定”“这不一定正确”。`;
+  },
+  async evidenceReply(args){
+    if(!this.checked) await this.check();
+    if(!this.available) return null;
+    try{
+      if(this.provider==='deepseek'){
+        const res=await fetch(this.proxyEndpoint,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:this.model,messages:[
+            {role:'system',content:'你是圆桌推理游戏的证据反应引擎，只能输出角色台词。'},
+            {role:'user',content:this.buildEvidencePrompt(args)}
+          ],temperature:.74,max_tokens:120})
+        });
+        if(!res.ok)return null;
+        const data=await res.json();
+        const msg=data?.choices?.[0]?.message||{};
+        return this.clean(msg.content||msg.reasoning_content||data?.reply||'');
+      }
+      const res=await fetch(`${this.ollamaEndpoint}/api/generate`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:this.ollamaModel,prompt:this.buildEvidencePrompt(args),stream:false,options:{temperature:.74,top_p:.9,repeat_penalty:1.08,num_predict:100}})
+      });
+      if(!res.ok)return null;
+      const data=await res.json();
+      return this.clean(data.response||'');
+    }catch(e){return null;}
+  },
+  buildInterjectionPrompt({speaker,previousSpeaker,previousReply,question,evidence,truth,phase,history}){
+    const s=SUS[speaker];
+    const role = truth===speaker
+      ? '你是本局真凶或核心责任人。你要趁机把怀疑推向别人，语气自然，不要太明显。'
+      : truth==='self'
+        ? '你不是直接凶手，但你也在遮掩自己的违规。你会质疑别人，也会保护自己。'
+        : '你不是本局真凶，但你不知道完整真相。你会根据自己的利益插话、质疑、甩锅或补充半真半假的信息。';
+    return `你在圆桌推理游戏中扮演插话嫌疑人。只输出一句中文插话，至少16个汉字，不超过70字。\n插话角色：${s.name}，${s.title}。性格：${s.style} 动机：${s.motive}\n你知道的信息：${this.roleKnowledge(speaker,truth)}\n你的策略：${role}\n当前阶段：第${phase}轮。\n玩家刚问：${question}\n${previousSpeaker}刚回答：${previousReply}\n圆桌证据：${evidence||'无'}\n近期记录：${history||'无'}\n要求：像狼人杀圆桌一样插话，可以质疑、补刀、转移焦点或自保；不要泄露真相；不要说“作为AI”。`;
+  },
+  async interjectReply(args){
+    if(!this.checked) await this.check();
+    if(!this.available) return null;
+    try{
+      if(this.provider==='deepseek'){
+        const res=await fetch(this.proxyEndpoint,{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({model:this.model,messages:[
+            {role:'system',content:'你是圆桌推理游戏的角色插话引擎，只能输出角色台词。'},
+            {role:'user',content:this.buildInterjectionPrompt(args)}
+          ],temperature:.78,max_tokens:90})
+        });
+        if(!res.ok)return null;
+        const data=await res.json();
+        const msg=data?.choices?.[0]?.message||{};
+        return this.clean(msg.content||msg.reasoning_content||data?.reply||'');
+      }
+      const res=await fetch(`${this.ollamaEndpoint}/api/generate`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:this.ollamaModel,prompt:this.buildInterjectionPrompt(args),stream:false,options:{temperature:.78,top_p:.9,repeat_penalty:1.08,num_predict:90}})
+      });
+      if(!res.ok)return null;
+      const data=await res.json();
+      return this.clean(data.response||'');
+    }catch(e){return null;}
+  }
+};
+
+// ========== 嫌疑人 & 审讯 ==========
+const SUS={
+  moran:{id:'moran',name:'MORAN',title:'男博士 / 实验室主管',icon:'🧪',img:'assets/generated/cartoon-moran-portrait.png',
+    motive:'实验违规会毁掉他的职业声誉。',style:'用术语挡刀，承认管理责任，但否认杀人。'},
+  lila:{id:'lila',name:'LILA',title:'博士助手',icon:'🔬',img:'assets/generated/cartoon-lila-portrait.png',
+    motive:'Yuki 准备撤掉她的一作署名。',style:'害怕、结巴，会不小心说出自己看到两个 Yuki。'},
+  zero:{id:'zero',name:'ZERO',title:'系统工程师',icon:'💻',img:'assets/generated/cartoon-zero-portrait.png',
+    motive:'Yuki 查到他倒卖实验算力。',style:'冷静、反问，承认改过系统但声称是保护所有人。'}
+};
+const QS_MODES={
+  probe:{
+    1:[
+      {id:'p1-1',text:'你当晚在哪里？时间线详细说一下',key:'location'},
+      {id:'p1-2',text:'你和 Yuki 最后一次见面聊了什么？',key:'last'},
+      {id:'p1-3',text:'镜像纠缠协议是谁提出来的？',key:'exp'},
+      {id:'p1-4',text:'你和 Yuki 之间有什么矛盾？',key:'motive'}
+    ],
+    2:[
+      {id:'p2-1',text:'你刚才说的和第一轮有出入，解释一下？',key:'location'},
+      {id:'p2-2',text:'Yuki 留下的终止指令你怎么看？',key:'yuki'},
+      {id:'p2-3',text:'监控缺失五秒，你确定什么都不知道？',key:'cam'},
+      {id:'p2-4',text:'最后机会，你还有什么没说的？',key:'final'}
+    ]
+  },
+  press:{
+    1:[
+      {id:'r1-1',text:'别绕圈子。23:47 到 23:52 你在哪？',key:'location'},
+      {id:'r1-2',text:'你骗了我。你和 Yuki 的关系没那么简单吧？',key:'motive'},
+      {id:'r1-3',text:'授权书上签名的是你。你还想怎么解释？',key:'exp'},
+      {id:'r1-4',text:'你在害怕什么？你的表情出卖了你',key:'last'}
+    ],
+    2:[
+      {id:'r2-1',text:'第二轮证据出来了。你的供词对不上',key:'cam'},
+      {id:'r2-2',text:'密室压力异常指向了你，还要否认？',key:'locked'},
+      {id:'r2-3',text:'别人已经供出你了。最后一次机会说实话',key:'final'},
+      {id:'r2-4',text:'你的不在场证明碎了。最后一句话',key:'location'}
+    ]
+  },
+  trap:{
+    1:[
+      {id:'s1-1',text:'听说你那天在实验舱附近出现过？嗯不是说杀了人',key:'location'},
+      {id:'s1-2',text:'如果有人改了监控时间，你觉得谁有能力？',key:'cam'},
+      {id:'s1-3',text:'有意思的是，Yuki 最后联系的人是你，对吧？',key:'last'},
+      {id:'s1-4',text:'假设实验是被迫执行的，谁会逼她？',key:'exp'}
+    ],
+    2:[
+      {id:'s2-1',text:'你之前说没碰过系统，但证据显示有痕迹',key:'cam'},
+      {id:'s2-2',text:'如果有人说看见你在门外，你怎么解释？',key:'location'},
+      {id:'s2-3',text:'其他两个人的供词有漏洞吗？具体说说',key:'motive'},
+      {id:'s2-4',text:'凶手就在你们三个中，你会排除谁？为什么？',key:'final'}
+    ]
+  }
+};
+const QS=QS_MODES.probe[1].concat(QS_MODES.probe[2]);
+
+const ADVISOR_PROMPTS={
+  empath:{
+    system:'你是直觉型心理分析师，正在协助警探分析嫌疑人心理。关注情绪变化、回避行为、措辞选择。你倾向于从人性角度分析，有时会过度解读。只输出一句分析文本，不超过80字，中文。不要说"作为AI"。',
+    build:({reply,who,pressure,evidence})=>`嫌疑人 ${who} 刚说了这句话：「${reply}」\n当前紧张度：${pressure}%\n圆桌已有证据：${evidence||'无'}\n请从情绪和心理反应角度分析。注意：回避、紧张、过于平静、或主动引导话题都是信号。`
+  },
+  logic:{
+    system:'你是冷静的犯罪时间线分析师，正在协助警探核对证据逻辑。关注时间线、物证比对、逻辑一致性。你倾向于寻找异常和矛盾，有时会忽略人的复杂性。只输出一句分析文本，不超过80字，中文。不要说"作为AI"。',
+    build:({reply,who,pressure,evidence})=>`嫌疑人 ${who} 刚说了这句话：「${reply}」\n当前紧张度：${pressure}%\n圆桌已有证据：${evidence||'无'}\n请从时间线和物证逻辑角度分析。注意：时间矛盾、与已知证据冲突、逻辑跳跃都是信号。`
+  }
+};
+
+const EV=[
+  {id:'ev1',zone:'device',icon:'💾',name:'异常能量读数',desc:'量子设备记录了37倍安全阈值的脉冲。'},
+  {id:'ev2',zone:'console',icon:'📧',name:'被删改的终端数据',desc:'MORAN在23:50删除了实验日志。监控有5秒缺失。'},
+  {id:'ev3',zone:'cabinet',icon:'🔒',name:'未授权实验文件',desc:'柜中藏着的实验授权书，MORAN亲笔签名但未走流程。'},
+  {id:'ev4',zone:'monitor',icon:'👁️',name:'密室压力异常',desc:'舱门密封期间检测到瞬时双重占位。'},
+  {id:'ev5',zone:'residue',icon:'🧬',name:'Yuki 的终止指令',desc:'Yuki留下手写终止协议，像是预设了自毁。'}
+];
+const TIPS=[
+  {cond:'general',txt:'不要只听他说什么，看他避开什么。'},
+  {cond:'general',txt:'每个人都在保护自己，但不一定都在保护凶手。'},
+  {cond:'contra',txt:'ZERO 的系统说法和 LILA 的目击时间对不上。'},
+  {cond:'ev_moran',txt:'MORAN怕的不是谋杀指控，是项目曝光。'},
+  {cond:'ev_lila',txt:'她快撑不住了。再推一把。'},
+  {cond:'ev_zero',txt:'他承认改过系统，但他把“为什么”藏起来了。'},
+  {cond:'close',txt:'快拼出来了。密室不是没人进去，而是多出了一个不该存在的人。'},
+  {cond:'close',txt:'Yuki 的纸条不像求救，更像给后来者的命令。'}
+];
+
+const CASE_ENDINGS={
+  self:{id:'self',icon:'🧬',name:'Yuki 主动终止自己',hint:'她预设了终止指令，真正目标是阻止第二个自己离开。',ok:true,
+    title:'隐藏真相：自我终止协议',
+    verdict:'✅ 完整推理成立',
+    body:['Yuki 启动镜像纠缠协议后，舱内出现了第二个等量的自己。她意识到实验成功会制造一个无法定义身份与责任的生命体。','她留下终止指令，不是求救，而是命令系统把结果封死在 C-7。MORAN掩盖违规，LILA逃离现场，ZERO剪掉影像，但他们都不是直接凶手。','密室成立的原因是：凶手、受害者、执行者在物理上都可以被称为 Yuki。']},
+  moran:{id:'moran',icon:'🧪',name:'指控 MORAN',hint:'他批准实验、删除日志，有最强掩盖动机。',ok:false,
+    title:'结局：主管替罪羊',
+    verdict:'⚠️ 真相残缺',
+    body:['MORAN因违规授权和删除日志被带走，Project Mirror 被封存。','但压力异常和终止指令没有被解释。几年后，另一个实验室复现了同样的双重占位事故。你抓住了掩盖者，却放走了真正的问题。']},
+  lila:{id:'lila',icon:'🔬',name:'指控 LILA',hint:'她目击现场又逃跑，和 Yuki 有署名冲突。',ok:false,
+    title:'结局：恐惧被当成罪',
+    verdict:'❌ 推理偏差',
+    body:['LILA承认自己逃跑，也承认曾恨过 Yuki。','可她无法解释密封舱内的双重质量读数。她有软弱和动机，却没有进入密室的方法。警探在结案报告旁写下：把恐惧当成凶器，是最容易的错误。']},
+  zero:{id:'zero',icon:'💻',name:'指控 ZERO',hint:'他剪掉监控，掌握门禁和系统。',ok:false,
+    title:'结局：系统工程师的谎言',
+    verdict:'⚠️ 只抓到半个真相',
+    body:['ZERO承认剪掉了五秒影像，也承认挪用算力。','但门禁记录没有伪造，舱门确实没有打开。他藏起的是“两个 Yuki”的影像，而不是一场普通谋杀。']},
+  mirror:{id:'mirror',icon:'🪞',name:'指控量子镜像',hint:'第二个 Yuki 出现并杀死本体。',ok:false,
+    title:'结局：把怪物写进报告',
+    verdict:'⚠️ 接近但不完整',
+    body:['你指出镜像杀死了本体，所有人沉默。这个说法能解释双重占位，却解释不了 Yuki 的终止指令。','如果镜像只是怪物，为什么 Yuki提前写下“不要让任何人带走它”？真正的反转不是怪物出现，而是 Yuki 已经选择了结局。']}
+};
+const CASE_MECHANISMS={
+  forced:{id:'forced',icon:'⚛️',name:'主管令牌强制升频',hint:'设备不是自然爆炸，而是有人把安全阈值推到失控。'},
+  staged:{id:'staged',icon:'🧪',name:'人为制造传感器错觉',hint:'密室看似物理异常，其实有人利用试剂和影像制造误导。'},
+  delay:{id:'delay',icon:'⏱️',name:'救援窗口被延迟',hint:'门没有打开过，但系统让救援慢了最关键的五秒。'},
+  selfstop:{id:'selfstop',icon:'🧬',name:'Yuki 自我终止协议',hint:'密室不是外来入侵，而是死者预设的封存选择。'},
+  mirroronly:{id:'mirroronly',icon:'🪞',name:'量子镜像直接杀人',hint:'第二个 Yuki 是凶手，但这个解释可能漏掉她的主动选择。'}
+};
+const TRUTH_SOLUTION={
+  moran:{responsibility:'moran',mechanism:'forced',proofZones:['device','console','cabinet']},
+  lila:{responsibility:'lila',mechanism:'staged',proofZones:['residue','cabinet','monitor']},
+  zero:{responsibility:'zero',mechanism:'delay',proofZones:['console','monitor','device']},
+  self:{responsibility:'self',mechanism:'selfstop',proofZones:['residue','device','monitor']}
+};
+
+// ========== 游戏主控 ==========
+const G={
+  state:'title', round:0, phase:1, truth:'self', caseSeed:'未抽取', truthDeckLeft:0, target:'moran', interrogateMode:'probe', isThinking:false, tacticalPending:false, clues3d:[], scanned3d:[], askedQ:[], evidenceFound:[], evidenceBook:{}, shownE:{moran:[],lila:[],zero:[]}, pressure:{moran:0,lila:0,zero:0}, broken:{moran:false,lila:false,zero:false}, roundNotes:[], contradictions:[], seatLines:{moran:'',lila:'',zero:''}, lastEvidence:null, finalPick:{responsibility:null,mechanism:null,proof:null}, readySecondSearch:false, aiTrace:'AI尚未生成本轮回答',
+
+  resetCase(){
+    const draw=drawTruthBranch();
+    this.truth=draw.truth;
+    this.truthDeckLeft=draw.remaining;
+    this.caseSeed=`C7-${String(Date.now()%100000).padStart(5,'0')}-${draw.drawIndex}/4`;
+    this.phase=1; this.round=0; this.target='moran'; this.interrogateMode='probe';
+    this.clues3d=[]; this.scanned3d=[]; this.askedQ=[]; this.evidenceFound=[]; this.evidenceBook={};
+    this.shownE={moran:[],lila:[],zero:[]}; this.pressure={moran:0,lila:0,zero:0}; this.broken={moran:false,lila:false,zero:false}; this.roundNotes=[]; this.contradictions=[]; this.seatLines={moran:'',lila:'',zero:''}; this.lastEvidence=null; this.finalPick={responsibility:null,mechanism:null,proof:null}; this.readySecondSearch=false; this.isThinking=false; this.tacticalPending=false; this.aiTrace='AI尚未生成本轮回答';this.tokens=3;this.maxTokens=5;this.confrontPending=null;
+    this.renderCaseSeed();
+  },
+  renderCaseSeed(){
+    const el=document.getElementById('case-seed');
+    if(el)el.textContent=`CASE SEED: ${this.caseSeed} · 隐藏真相牌组剩余 ${this.truthDeckLeft}/4 · 四局内不重复`;
+  },
+
+  async startComic(){
+    SFX.init(); this.resetCase(); this.state='comic'; this._skipComic=false; this._comicAdvance=false; this._comicReady=false;
+    S.switch('comic');
+    const img=document.getElementById('comic-panel'),txt=document.getElementById('comic-text'),ctr=document.getElementById('comic-counter'),next=document.getElementById('comic-next');
+    for(let i=0;i<COMIC.length&&!this._skipComic;i++){
+      const c=COMIC[i],hold=speechHoldMs(c.txt,9200),autoHold=Math.min(22000,hold+4200);
+      this._comicAdvance=false; this._comicReady=false;
+      img.src=c.img;txt.textContent=c.txt;ctr.textContent=`${i+1}/${COMIC.length}`;
+      if(next){next.classList.add('locked');next.textContent='朗读中…'}
+      img.style.opacity='1';txt.style.opacity='1';SFX.comic();
+      const speechDone=spk(c.tts||c.txt,'narrator',{minMs:hold,maxMs:autoHold});
+      const started=Date.now();
+      await speechDone;
+      this._comicReady=true;
+      if(next){next.classList.remove('locked');next.textContent=i===COMIC.length-1?'进入简报 ▸':'下一幕 ▸'}
+      while(Date.now()-started<autoHold&&!this._skipComic&&!this._comicAdvance) await wait(120);
+      await wait(180);
+    }
+    this._skipComic=false;
+    if(this.state!=='comic'&&this.state!=='briefing')return;
+    this.state='briefing';S.switch('briefing');SFX.start();setTimeout(()=>spk('量子实验室发生命案。每次开局，真正的结局都会改变。','detective'),500);
+  },
+  nextComic(){
+    if(this.state!=='comic'||!this._comicReady)return;
+    this._comicAdvance=true;SFX.click();
+  },
+  skipComic(){if(this.state==='title')this.resetCase();this._skipComic=true;this.state='briefing';S.switch('briefing');speechSynthesis.cancel();SFX.start()},
+
+  // ==== 3D 探索 ====
+  explore3D(){
+    this.state='explore3d';this.clues3d=[];this.scanned3d=[];
+    S.switch('explore3d');
+    Lab3D.init(document.getElementById('screen-explore3d'));
+    this.update3DHUD();
+    spk(this.phase===1?'空间者1号进入实验舱。先收集公开物证。':'空间者1号进行第二轮复扫。寻找和第一轮供词对不上的私密线索。','detective');
+  },
+
+  markScanned3D(zid){
+    if(!this.scanned3d.includes(zid)) this.scanned3d.push(zid);
+  },
+
+  pickClue3D(zid){
+    if(this.clues3d.includes(zid))return;
+    this.clues3d.push(zid);SFX.clue();
+    this.update3DHUD();
+
+    const z=ZONES[zid], clue=currentClue(zid);
+    this.evidenceBook[clue.id]={id:clue.id,zone:zid,icon:clue.icon,name:clue.name||clue.title,desc:clue.desc||clue.summary,phase:clue.phase,img:clue.img,tags:clue.tags||[]};
+    if(!this.evidenceFound.includes(clue.id))this.evidenceFound.push(clue.id);
+    const pop=document.getElementById('clue-pop'),card=pop.querySelector('.clue-card');
+    const tags=clue.tags||['物证'];
+    card.innerHTML=`
+      <div class="clue-header"><span class="clue-badge">${clue.badge||`第${this.phase}轮物证`}</span><span class="clue-h">${clue.icon||z.clue.icon} ${clue.title}</span></div>
+	      ${clue.img?`<div class="clue-img-wrap ev-art"><img src="${clue.img}"><div class="ev-label">${clue.icon||z.clue.icon} ${clue.title}</div></div>`:''}
+	      <div class="clue-summary">${clue.summary}</div>
+	      <div>${tags.map(t=>`<span class="scan-chip">${t}</span>`).join('')}</div>
+	      <div class="clue-detail" id="clue-detail-${zid}">${clue.detail}</div>
+	      <span class="detail-toggle" onclick="document.getElementById('clue-detail-${zid}').classList.toggle('open');this.textContent=this.textContent==='展开详细报告 ▸'?'收起 ▾':'展开详细报告 ▸'">展开详细报告 ▸</span>
+	      <div class="clue-tags">${tags.map(t=>`<span class="clue-tag">${t}</span>`).join('')}</div>
+	      <button class="btn sm" onclick="G.closeClue()">记录在案</button>`;
+    pop.classList.remove('hidden');
+
+    if(this.clues3d.length>=Object.keys(ZONES).length){
+      const h=document.getElementById('hint3d');
+      h.textContent=this.phase===1?'第一轮物证已收集！点击开始盘问 →':'第二轮私密线索已收集！点击复盘审讯 →';
+      h.classList.add('action');
+      setTimeout(()=>{h.onclick=()=>{Lab3D.dispose();G.interrogate()};h.style.pointerEvents='auto';h.style.cursor='pointer';},1500);
+    }
+  },
+
+  // 密码锁迷你游戏
+  _lockDigits:'',
+  openLock(){
+    this._lockDigits='';
+    for(let i=0;i<4;i++){const d=document.getElementById('ld'+i);d.textContent='_';d.className='lock-digit';}
+    document.getElementById('lock-hint').textContent=CABINET_HINT;
+    document.getElementById('lock-pop').classList.remove('hidden');
+    this._lockListener=e=>{
+      if(e.key>='0'&&e.key<='9'&&this._lockDigits.length<4){
+        this._lockDigits+=e.key;
+        const idx=this._lockDigits.length-1;
+        const d=document.getElementById('ld'+idx);
+        d.textContent=e.key; d.classList.add('filled');
+        if(this._lockDigits.length===4) setTimeout(()=>this.lockInput(),300);
+      }
+      if(e.key==='Backspace'&&this._lockDigits.length>0){
+        const idx=this._lockDigits.length-1;
+        this._lockDigits=this._lockDigits.slice(0,-1);
+        const d=document.getElementById('ld'+idx);
+        d.textContent='_'; d.className='lock-digit';
+      }
+    };
+    document.addEventListener('keydown',this._lockListener);
+  },
+  lockInput(){
+    if(this._lockDigits===CABINET_CODE){
+      for(let i=0;i<4;i++)document.getElementById('ld'+i).classList.add('ok');
+      document.removeEventListener('keydown',this._lockListener);
+      SFX.win();
+      setTimeout(()=>{document.getElementById('lock-pop').classList.add('hidden');G.pickClue3D('cabinet');},800);
+    } else {
+      for(let i=0;i<4;i++){
+        const d=document.getElementById('ld'+i);d.classList.add('wrong');d.classList.remove('filled');
+      }
+      SFX.lie();
+      setTimeout(()=>{
+        this._lockDigits='';
+        for(let i=0;i<4;i++){const d=document.getElementById('ld'+i);d.textContent='_';d.className='lock-digit';}
+      },600);
+    }
+  },
+  lockCancel(){
+    document.removeEventListener('keydown',this._lockListener);
+    document.getElementById('lock-pop').classList.add('hidden');
+  },
+
+  closeClue(){document.getElementById('clue-pop').classList.add('hidden')},
+  update3DHUD(){document.getElementById('hud3d-clues').textContent=`证据 ${this.clues3d.length}/${Object.keys(ZONES).length}`},
+
+  // ==== 审讯 ====
+  interrogate(){
+    this.state='interrogate';this.round=0;this.target='moran';this.askedQ=[];this.readySecondSearch=false;
+    S.switch('interrogate');document.getElementById('inter-log').innerHTML='';
+    VOICE.init();LOCAL_AI.check().then(()=>{this.aiTrace=LOCAL_AI.provider==='deepseek'?'已连接 V4 Flash':'等待玩家追问';this.renderRoundtable();});
+    this.renderQ();this.renderE();this.renderEvidenceStrip();this.renderTokens();this.renderSuspicionHeat();this.renderRoundtable();this.renderMode();this.bindT();this.bindFreeQuestion();this.updateActionButton();
+    this.addL('sys','警探',this.phase===1?'第一轮盘问：先建立每个人的不在场证明和矛盾动机。':'第二轮复盘：拿私密线索击穿他们的供词。');
+    this.setS(this.phase===1?'第一轮盘问':'第二轮复盘');this.upR();spk(this.phase===1?'第一轮盘问开始。先问时间线和矛盾。':'第二轮复盘开始。对照新线索找漏洞。','detective');
+  },
+
+  async askQ(qid){
+    const allQs=[...QS_MODES.probe[1],...QS_MODES.probe[2],...QS_MODES.press[1],...QS_MODES.press[2],...QS_MODES.trap[1],...QS_MODES.trap[2]];
+    const q=allQs.find(x=>x.id===qid);if(!q)return;
+    const input=document.getElementById('free-question');
+    input.value=q.text;input.focus();SFX.click();
+  },
+  async showE(evid){
+    if(this.isThinking)return;
+    if(this.shownE[this.target].includes(evid))return;
+    if(!this.spendToken('出示证据'))return;
+    this.setThinking(true,'证据回应生成中…');
+    this.shownE[this.target].push(evid);
+    const ev=this.evidenceBook[evid]||EV.find(e=>e.id===evid);
+    this.lastEvidence=ev;
+    this.addL('sys','GM',`甩出证据：${ev.icon} ${ev.name}`);SFX.clue();
+    const gain=this.applyPressure(this.target,ev);
+    this.roundNotes.push(`${SUS[this.target].name} 被出示证据「${ev.name}」`);
+    this.recordContradiction({
+      who:this.target,
+      tag:gain>0?'证据击中':'证据偏弱',
+      text:gain>0?`${ev.name} 触及 ${SUS[this.target].name} 的核心矛盾，后续追问要围绕「${ev.desc}」。`:`${ev.name} 暂时压不住 ${SUS[this.target].name}，这更像旁证或需要换对象验证。`
+    });
+    this.renderE();this.renderEvidenceStrip();this.renderRoundtable();
+    this.setS(`${SUS[this.target].name} 正在回应证据…`);
+    const started=performance.now();
+    const history=this.roundNotes.slice(-6).join('；');
+    let reply=await LOCAL_AI.evidenceReply({suspect:this.target,evidence:ev,truth:this.truth,phase:this.phase,pressure:this.pressure[this.target]||0,gain,history,mode:this.interrogateMode});
+    const usedAi=!!(reply&&reply.length>=12);
+    if(!usedAi)reply=this.evidenceFallback(this.target,ev,gain);
+    this.aiTrace=usedAi?`${LOCAL_AI.provider} 证据反应 ${Math.round(performance.now()-started)}ms`:'规则兜底证据反应';
+    this.addL('sus',SUS[this.target].name,reply,SUS[this.target].img);spk(reply,this.target);
+    this.roundNotes.push(`${SUS[this.target].name}回应证据：${reply}`);
+    this.enableConfront(this.target,reply,`警探出示证据「${ev.name}」`,'evidence',ev.desc||ev.name);
+    this.fireDualAdvisors({who:SUS[this.target].name,reply,pressure:this.pressure[this.target]||0});
+    this.round++;this.upR();this.renderRoundtable();this.updateActionButton();
+    this.setThinking(false);
+    if(this.phase===1&&this.round>=4)this.setS('可以让AI助手总结矛盾。');
+    else if(this.phase===2&&this.round>=4)this.setS('可以做最终推断了。');
+    else this.setS(gain>0?'证据击中了矛盾，继续追问或换人。':'这张证据没有压住他，换证据或换对象。');
+  },
+  switchT(id){this.target=id;document.querySelectorAll('.tbtn,.seat').forEach(b=>b.classList.toggle('sel',b.dataset.t===id));document.querySelectorAll('.seat').forEach(b=>b.classList.toggle('active',b.dataset.t===id));this.renderE();this.renderQ();this.renderRoundtable();this.setS(`切换：${SUS[id].name}`);SFX.click()},
+
+  pressureGain(sid,ev){
+    if(!ev)return 0;
+    const zone=ev.zone;
+    const truthHits={
+      moran:{moran:['device','cabinet','console']},
+      lila:{lila:['residue','cabinet','monitor']},
+      zero:{zero:['console','monitor','device']},
+      self:{moran:['cabinet'],lila:['residue'],zero:['console']}
+    };
+    if(truthHits[this.truth]?.[sid]?.includes(zone))return ev.phase===2?30:16;
+    const coverUps={
+      moran:['device','cabinet','console'],
+      lila:['residue','cabinet','monitor'],
+      zero:['console','monitor','device']
+    };
+    if(coverUps[sid]?.includes(zone))return ev.phase===2?7:3;
+    return 0;
+  },
+  modePressureFactor(){
+    return {probe:.75,press:1.28,trap:1}[this.interrogateMode]||1;
+  },
+  pressureLine(sid){
+    const p=this.pressure[sid]||0;
+    if(this.broken[sid])return `${SUS[sid].name} 已破防`;
+    if(p>=70)return '濒临崩溃，继续用证据压迫';
+    if(p>=42)return '开始防御，供词会露出缝隙';
+    if(p>=18)return '紧张上升，注意时间线';
+    return '稳定，仍在试探';
+  },
+  applyPressure(sid,ev){
+    const gain=Math.floor(this.pressureGain(sid,ev)*this.modePressureFactor());
+    if(gain<=0){this.setS('证据没有击中这个人的核心矛盾。');return 0;}
+    this.pressure[sid]=Math.min(100,(this.pressure[sid]||0)+gain);
+    if(this.pressure[sid]>=82&&!this.broken[sid]){
+      this.broken[sid]=true;
+      const confession=this.breakdownLine(sid);
+        setTimeout(()=>{this.addL('sus',SUS[sid].name,confession,SUS[sid].img);SFX.lie();spk(confession,sid);this.renderRoundtable();},360);
+      }
+    return gain;
+  },
+  applyQuestionPressure(sid,key,evUsed,text){
+    const hasEvidence=evUsed.length>0;
+    const isChallenge=/矛盾|撒谎|证据|不对|为什么|明明|解释|你刚才|时间线|漏洞|证明/.test(text);
+    if(!hasEvidence||!isChallenge)return;
+    const best=evUsed.map(id=>this.evidenceBook[id]).filter(Boolean).sort((a,b)=>this.pressureGain(sid,b)-this.pressureGain(sid,a))[0];
+    const gain=Math.floor(this.pressureGain(sid,best)*.55*this.modePressureFactor());
+    if(gain>0){
+      this.pressure[sid]=Math.min(100,(this.pressure[sid]||0)+gain);
+      if(this.pressure[sid]>=82&&!this.broken[sid]){
+        this.broken[sid]=true;
+        const confession=this.breakdownLine(sid);
+        setTimeout(()=>{this.addL('sus',SUS[sid].name,confession,SUS[sid].img);SFX.lie();spk(confession,sid);this.renderRoundtable();},420);
+      }
+    }
+  },
+  evidenceFallback(sid,ev,gain){
+    const zone=ev?.zone||'unknown';
+    const hit=gain>0;
+    const lines={
+      moran:{
+        device:hit?'能量阈值异常只能说明实验失控。主管令牌出现在记录里，不等于我想让她死。':'设备残骸和我无关。你该问执行协议的人，不是问签字的人。',
+        console:hit?'日志是我删的，我承认。但我删的是违规审批，不是你想象中的杀人过程。':'终端记录可以被很多人碰过，别把每个缺口都塞进我的名字。',
+        cabinet:hit?'签名是真的。可签下风险报告和亲手制造爆炸，中间差着一整道门。':'文件柜能证明项目违规，不能证明我进过C-7。',
+        monitor:'监控越完整，越说明没人进去。你拿密室压力来压我，只是在替真正的问题绕路。',
+        residue:'Yuki 的字条更像她自己的决定。你确定要把她的选择全部算到我头上？'
+      },
+      lila:{
+        residue:hit?'那张纸我见过。她写字时很平静，平静到让我害怕，所以我才逃了。':'Yuki 写了什么不是我能控制的。别把死者的笔迹当成我的刀。',
+        cabinet:hit?'试剂柜少了东西不代表我拿去害她。实验室里每个人都有柜门权限。':'文件柜是MORAN的地盘，你把它推给我，太省事了。',
+        monitor:hit?'我承认我看见了影像里的异常，但我没有勇气说出来。那不是杀人。':'监控只证明我害怕，不证明我有办法打开密室。',
+        console:'终端和系统桥不是我的权限。你想找被删的五秒，别只盯着逃跑的人。',
+        device:'设备失控是主管和系统的事。我只是助手，我没有改协议的权限。'
+      },
+      zero:{
+        console:hit?'我剪掉五秒，是因为那五秒会让整站崩溃。剪影像不等于制造死亡。':'终端缓存不是判决书。你要分清日志缺失和门禁事实。',
+        monitor:hit?'门禁没被伪造，这才是重点。你要说我有罪，就解释我为什么不用开门也能杀人。':'监控证明门没开过。你们总是忘了系统也可能只是诚实。',
+        device:hit?'算力挪用是我的问题，但设备爆炸不是一条算力记录就能解释的。':'核心残骸指向协议执行者，不是每个碰过系统的人。',
+        cabinet:'授权文件上没有我的签名。主管把风险压下来，现在别让我替他背。',
+        residue:'Yuki 留给系统的指令很奇怪。奇怪不等于我伪造了她的决定。'
+      }
+    };
+    return lines[sid]?.[zone] || (hit?'这张证据确实让我难看，但还不足以证明我就是凶手。':'这张证据压不到我。你应该换一个问题，或者换一个人。');
+  },
+  breakdownLine(sid){
+    if(sid===this.truth){
+      return {
+        moran:'……够了。主管令牌确实碰过阈值记录，但那是为了保住项目，不是你想象的那种杀人自白。',
+        lila:'我承认我恨过她，也承认那五秒我没有说完整。可你还没有证明我真的能让密室成立。',
+        zero:'我剪过影像，也让系统记录看起来太干净。但门禁没撒谎，你别急着把技术漏洞写成杀人方法。'
+      }[sid] || '……我隐瞒了东西，但你还没有拼完整。';
+    }
+    return {
+      moran:'我承认违规授权，也承认删日志。但我不是那个让她死在密室里的人。',
+      lila:'我逃了，我说谎了，可我没有杀她。我只是没有勇气承认我看见了两个她。',
+      zero:'我剪掉影像，挪过算力，也怕被她曝光。但那扇门的确没有打开过。'
+    }[sid] || '……我隐瞒了东西，但那不是最后的真相。';
+  },
+
+  personaVariant(sid,key,zones){
+    const branch={
+      moran:{
+        moran:{
+          location:'23:47 我确实碰过主管终端，但那是为了封锁过载，不是为了制造死亡。',
+          exp:'Yuki要求升频，我只是批准了她已经决定要做的事。别把执行权和杀意混在一起。',
+          final:'审批链看起来会指向我，所以我删了它。但这只能证明我怕丑闻。'
+        },
+        lila:{
+          motive:'LILA和Yuki的署名争执不是小事。年轻人第一次被夺走名字，什么都可能做。',
+          cam:'如果门外影像真有第二个影子，那你该问那个跑掉的人，不是问我。',
+          final:'我签过字，但我没有靠近C-7。真正接近现场的人一直在装害怕。'
+        },
+        zero:{
+          location:'我在主管终端外等系统恢复。真正能让五秒消失的人，在系统桥。',
+          cam:'监控不是我的专业。ZERO说门禁诚实，可诚实的数据也能被排队延迟。',
+          final:'我删的是项目违规，不是救援窗口。你该问谁让救援慢了五秒。'
+        },
+        self:{
+          yuki:'Yuki最近不像在躲避死亡，倒像在安排一个没人能阻止的决定。',
+          locked:'如果舱门真的没开过，那密室的答案未必在人群里，也可能在实验本身。',
+          final:'我承认我怕项目毁掉，但Yuki留下的东西不像求救，更像命令。'
+        }
+      },
+      lila:{
+        moran:{
+          exp:'MORAN说他只是管理，可没有他的主管权限，那个阈值根本上不去。',
+          location:'我听见警报时他不在我视线里。主管终端外，这句话太方便了。',
+          final:'他总把签字说成流程，可Yuki不会无缘无故一个人承担所有风险。'
+        },
+        lila:{
+          motive:'我恨过她，真的。但恨一个人和走进密室杀她，中间隔着一扇锁死的门。',
+          cam:'那五秒我看见了不该看的东西。我不想说，是因为说出来没人会信。',
+          final:'我跑了，所以我有罪。可我犯的是逃跑，不是把她留在爆炸里。'
+        },
+        zero:{
+          cam:'ZERO一直说系统没撒谎，可系统可以不撒谎，只是慢一点救人。',
+          locked:'门没打开过这句话太漂亮了，漂亮到像有人专门准备给我们听。',
+          final:'我看到的不是MORAN进门，是系统突然把所有声音都吞掉。'
+        },
+        self:{
+          yuki:'她那晚不像害怕别人，更像害怕自己会做出一个没人理解的选择。',
+          locked:'如果里面真的出现了两个她，那“谁进去过”这个问题本身就错了。',
+          final:'我逃跑前看到她很平静。那种平静比爆炸声更吓人。'
+        }
+      },
+      zero:{
+        moran:{
+          exp:'主管令牌不是装饰品。谁能把阈值推上去，谁就别假装只是旁观。',
+          location:'MORAN说在终端外，可终端权限记录不是站在门外就能洗干净的。',
+          final:'我剪过影像，但我没法替主管签名，也没法替他升频。'
+        },
+        lila:{
+          motive:'署名争执足够让人失控。别因为她看起来害怕，就把她排除在外。',
+          cam:'门外影像里那个轮廓不是系统噪声。有人比我更靠近C-7。',
+          final:'我承认我剪了五秒，但那五秒里最该解释的是门外的人。'
+        },
+        zero:{
+          location:'我在系统桥，门禁队列能证明我没进C-7。你要查的是谁让我留窗口。',
+          cam:'我剪掉影像是为了防止整站恐慌，不是为了给自己造密室。',
+          final:'门没有打开过，这点很关键。别把系统工程师当成万能凶手。'
+        },
+        self:{
+          yuki:'Yuki给系统留下过终止指令。她不是在求救，她在要求我们别救错东西。',
+          locked:'门没打开，记录也没伪造。真正不稳定的是“舱里只有一个人”这个前提。',
+          final:'如果你非要找一个外来凶手，系统会给你一个漂亮但错误的答案。'
+        }
+      }
+    };
+    const variant=branch[sid]?.[this.truth]?.[key];
+    if(variant)return variant;
+    if(zones.includes('console')&&sid==='zero')return branch.zero[this.truth]?.cam;
+    if(zones.includes('cabinet')&&sid==='moran')return branch.moran[this.truth]?.exp;
+    if(zones.includes('residue')&&sid==='lila')return branch.lila[this.truth]?.yuki;
+    return null;
+  },
+
+  personaReply(sid,q,evUsed){
+    const zones = evUsed.map(id=>this.evidenceBook[id]?.zone||id);
+    const variant=this.personaVariant(sid,q.key,zones);
+    if(variant)return variant;
+    const base={
+      moran:{
+        location:'23:47 我在主管终端外，等待安全系统解锁。别把流程延迟说成罪行。',
+        last:'她最后问我要更高能级授权。我拒绝了，至少我以为我拒绝了。',
+        exp:'那是退相干稳定性测试。名字听起来危险，不等于它就是谋杀。',
+        cam:'监控缺失？系统日志由 ZERO 管，我没有时间逐帧盯着。',
+        motive:'我当然不想项目曝光，但毁掉她对我没有任何好处。',
+        yuki:'她最近像着了魔，说“如果第二个我出现，第一个我就不再唯一”。',
+        locked:'密室成立很简单：没人进去，设备故障杀了她。',
+        final:'我删日志是为了保护项目，也是为了保护空间站。不是为了保护凶手。'
+      },
+      lila:{
+        location:'我在隔壁……我听到警报后跑了。我知道这听起来很糟。',
+        last:'23:40 她给我发消息，说今晚会证明“人可以不是单数”。',
+        exp:'我只负责记录，不负责决定。MORAN签了字，ZERO改了权限，我只是看见了。',
+        cam:'那五秒里……我看见门外有一个 Yuki。不，算了，当我没说。',
+        motive:'她要撤掉我的署名。我恨她一瞬间，但我没有杀她。',
+        yuki:'她害怕的不是死亡，是实验成功以后谁有资格活下来。',
+        locked:'如果门一直锁着，那里面只能是她自己。或者……另一个她。',
+        final:'我逃了。真正让我害怕的是，她看见另一个自己时没有求救。'
+      },
+      zero:{
+        location:'我在系统桥。所有门禁请求都有记录，除非有人故意用主管权限擦掉。',
+        last:'Yuki让我给 C-7 留一个离线窗口。我拒绝了，然后她自己拿到了权限。',
+        exp:'协议执行者是 Yuki。授权者是 MORAN。背锅的人通常叫系统工程师。',
+        cam:'我剪掉五秒，是因为那五秒会让整站恐慌。你不会想在新闻里看见两个 Yuki。',
+        motive:'她查到我挪用算力。我承认违规，但杀她只会让我第一个暴露。',
+        yuki:'她给我留了终止指令，说如果实验成功，必须让“结果”死在舱里。',
+        locked:'门没打开过。系统没有撒谎。撒谎的是我们对“一个人”的定义。',
+        final:'我没有救她。我只是按她留下的指令，让系统不要救第二个她。'
+      }
+    };
+    const pressure={
+      moran:{
+        ev2:'……是，我删了日志。但我删的是违规实验，不是谋杀证据。',
+        ev3:'签名是真的。Yuki逼我当晚批准，我犯的是傲慢，不是杀人。',
+        ev5:'如果她留下终止指令，那说明她比我们任何人都早知道后果。'
+      },
+      lila:{
+        ev4:'压力传感器没坏。我真的看见了两个质量读数，像两个她重叠在一起。',
+        ev5:'她不是想活下来。她像是在安排自己的葬礼。',
+        ev3:'MORAN知道风险。他说“天才总要越界一次”。'
+      },
+      zero:{
+        ev2:'我剪监控，是为了隐藏第二个 Yuki 的影像。公开视频会让整站失控。',
+        ev4:'双重占位不是传感器故障，是系统第一次诚实。',
+        ev5:'终止指令不是我的伪造。她写给系统，也写给你。'
+      }
+    };
+    const legacy={console:'ev2',cabinet:'ev3',monitor:'ev4',residue:'ev5',device:'ev1'};
+    const hit = zones.map(z=>pressure[sid]?.[legacy[z]||z]).filter(Boolean).pop();
+    return hit || base[sid]?.[q.key] || '……';
+  },
+  pickTip(){const p=TIPS.filter(t=>t.cond==='general');if(this.shownE[this.target].length)p.push(...TIPS.filter(t=>t.cond===`ev_${this.target}`));if(this.round>=4)p.push(...TIPS.filter(t=>t.cond==='close'));if(Math.random()<.3)p.push(...TIPS.filter(t=>t.cond==='contra'));return p[Math.floor(Math.random()*p.length)]?.txt},
+
+  // ==== 质询币 ====
+  spendToken(action){
+    if(this.tokens<=0){this.setS(`质询币不足！无法${action}`);return false;}
+    this.tokens--;this.renderTokens();return true;
+  },
+  renderTokens(){
+    const el=document.getElementById('token-display');
+    if(el){
+      const active=Array.from({length:this.tokens},()=>'<span style="text-shadow:0 0 6px var(--a3)">⚡</span>').join('');
+      const spent=Array.from({length:(this.maxTokens||5)-this.tokens},()=>'<span style="opacity:.25">⚡</span>').join('');
+      el.innerHTML=active+spent;
+    }
+  },
+
+  // ==== 对质系统 ====
+  enableConfront(targetId,originalReply,question,key,evidence){
+    this.confrontPending={targetId,originalReply,question,key,evidence};
+    const log=document.getElementById('inter-log');
+    const row=document.createElement('div');
+    row.className='confront-row';
+    const others=Object.keys(SUS).filter(id=>id!==targetId);
+    row.innerHTML=`<span class="confront-label">⚡ 对质：</span>${others.map(id=>`<button class="confront-btn" onclick="G.confront('${id}')">${SUS[id].name}</button>`).join('')}<button class="confront-skip" onclick="G.skipConfront()">跳过</button>`;
+    log.appendChild(row);log.scrollTop=999999;
+  },
+  async confront(speakerId){
+    document.querySelectorAll('.confront-row').forEach(el=>el.remove());
+    if(!this.confrontPending)return;
+    if(!this.spendToken('对质')){this.confrontPending=null;return;}
+    const {targetId,originalReply}=this.confrontPending;
+    this.confrontPending=null;
+    this.setS(`${SUS[speakerId].name} 正在对质 ${SUS[targetId].name}…`);
+    const history=this.roundNotes.slice(-6).join('；');
+    const evidence=Object.values(this.evidenceBook).map(e=>e.name).filter(Boolean).join('、');
+    const started=performance.now();
+    let reply=await LOCAL_AI.confrontReply({speaker:speakerId,target:targetId,targetReply:originalReply,truth:this.truth,phase:this.phase,history,evidence});
+    const usedAi=!!(reply&&reply.length>=10);
+    if(!usedAi)reply=this.confrontFallback(speakerId,targetId);
+    this.aiTrace=usedAi?`${LOCAL_AI.provider} 对质 ${Math.round(performance.now()-started)}ms`:'规则兜底对质';
+    this.addL('sus',SUS[speakerId].name,`→ ${SUS[targetId].name}：${reply}`,SUS[speakerId].img);
+    SFX.pair();this.roundNotes.push(`${SUS[speakerId].name}对质${SUS[targetId].name}：${reply}`);
+    this.recordContradiction({who:speakerId,tag:'对质交锋',text:`${SUS[speakerId].name}对${SUS[targetId].name}发起对质：${reply}`});
+    this.fireDualAdvisors({who:SUS[speakerId].name,reply,pressure:this.pressure[speakerId]||0});
+  },
+  skipConfront(){
+    document.querySelectorAll('.confront-row').forEach(el=>el.remove());
+    if(this.confrontPending){
+      const {question,key,previousReply,evidence}=this.confrontPending;
+      this.confrontPending=null;
+      this.roundtableInterject(question,key,previousReply,evidence);
+    }
+  },
+  confrontFallback(speakerId,targetId){
+    const matrix={
+      moran:{lila:'LILA说她害怕得跑了——可她跑之前站在门外看了整整三秒，这不是害怕人的反应。',zero:'ZERO说门禁没被伪造，但系统日志显示有人把救援请求排到了最后。'},
+      lila:{moran:'MORAN说只是签了字，但签名旁边写着"不能等"，这不是正常审批的语气。',zero:'ZERO对那五秒的解释太完美了，像提前准备好的故事。'},
+      zero:{moran:'MORAN说他只在门外等待——那他的主管令牌为什么出现在核心记录里？',lila:'LILA说她什么都不知道，可她目击的时间比她自己声称的早了整整两分钟。'}
+    };
+    return matrix[speakerId]?.[targetId]||'这句话我不太认同，但现在不想展开说。';
+  },
+
+  // ==== 双AI顾问 ====
+  async fireDualAdvisors({who,reply,pressure}){
+    const evidence=Object.values(this.evidenceBook).map(e=>e.name).filter(Boolean).join('、');
+    const ctx={reply:reply||'',who,pressure:pressure||0,evidence};
+    const [empathMsg,logicMsg]=await Promise.all([
+      this.getAdvisorMessage('empath',ctx),
+      this.getAdvisorMessage('logic',ctx)
+    ]);
+    setTimeout(()=>{
+      if(empathMsg){this.addL('par','共情·直觉',empathMsg,null,'empath');SFX.pair();}
+      if(logicMsg){this.addL('par','逻辑·分析',logicMsg,null,'logic');SFX.pair();}
+      this.renderRoundtable();
+    },400);
+  },
+  async getAdvisorMessage(type,ctx){
+    const config=ADVISOR_PROMPTS[type];
+    if(!config)return this.advisorFallback(type,ctx);
+    const prompt=config.build(ctx);
+    try{
+      if(LOCAL_AI.provider==='deepseek'){
+        const res=await fetch(LOCAL_AI.proxyEndpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:LOCAL_AI.model,messages:[{role:'system',content:config.system},{role:'user',content:prompt}],temperature:type==='empath'?.78:.42,max_tokens:100})});
+        if(!res.ok)return this.advisorFallback(type,ctx);
+        const data=await res.json();
+        const msg=LOCAL_AI.clean(data?.choices?.[0]?.message?.content||'');
+        return msg&&msg.length>=8?msg:this.advisorFallback(type,ctx);
+      }
+      if(LOCAL_AI.provider==='ollama'){
+        const res=await fetch(`${LOCAL_AI.ollamaEndpoint}/api/generate`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:LOCAL_AI.ollamaModel,prompt,stream:false,options:{temperature:type==='empath'?.78:.42,num_predict:90}})});
+        if(!res.ok)return this.advisorFallback(type,ctx);
+        const data=await res.json();
+        const msg=LOCAL_AI.clean(data.response||'');
+        return msg&&msg.length>=8?msg:this.advisorFallback(type,ctx);
+      }
+    }catch(e){}
+    return this.advisorFallback(type,ctx);
+  },
+  advisorFallback(type,{who,pressure}){
+    if(type==='empath'){
+      if(pressure>=50)return `${who||'嫌疑人'}的防御姿态越来越明显，这种紧张不像是无辜者的自然反应。`;
+      if(pressure>=20)return `${who||'嫌疑人'}在回避某些关键词，注意听哪些话题让人不安。`;
+      return `目前表现镇定，但真正的平静不需要反复强调自己没做过。`;
+    }
+    if(pressure>=50)return `${who||'嫌疑人'}的时间线至少有两处需要二次验证。`;
+    if(pressure>=20)return `把三个人的时间线画在一起，看看有没有不可能同时成立的交叉点。`;
+    return `目前物证还不足以排除任何人，继续收集线索。`;
+  },
+
+  addL(type,who,text,img,advisorType){
+    const log=document.getElementById('inter-log');const d=document.createElement('div');
+    const sid=Object.keys(SUS).find(k=>SUS[k].name===who)||'';
+    d.className=`ientry ${type} ${sid} ${advisorType||''}`;
+    const speaker=Object.values(SUS).find(s=>s.name===who)||SUS[this.target];
+    if(type==='sus')d.innerHTML=`${img?`<img class="iav" src="${img}">`:''}<div><div class="inm">${who}</div><div class="itx">${text}</div></div>`;
+    else if(type==='par')d.innerHTML=`<div class="itx">💡 <b>${who}：</b>${text}</div>`;
+    else d.innerHTML=`<div class="itx">${text}</div>`;
+    log.appendChild(d);log.scrollTop=999999;
+    if(type==='sus'||type==='par'||type==='sys')this.renderRoundtable(who,text,type);
+  },
+  renderQ(){const l=document.getElementById('qlist');l.innerHTML='';const mode=this.interrogateMode||'probe';const qs=(QS_MODES[mode]||QS_MODES.probe)[this.phase]||[];qs.forEach(q=>{const b=document.createElement('button');b.className='qbtn';b.dataset.q=q.id;b.textContent=q.text;b.title='点击填入输入框，可自行修改后追问';b.onclick=()=>this.askQ(q.id);l.appendChild(b)})},
+  renderE(){const l=document.getElementById('elist');l.innerHTML='';Object.values(this.evidenceBook).forEach(e=>{const u=this.shownE[this.target]?.includes(e.id);const d=document.createElement('div');d.className=`evi${u?' used':''}`;d.innerHTML=`<span class="evic">${e.icon}</span> ${e.name}`;d.onclick=()=>{if(!u)this.showE(e.id)};l.appendChild(d)});if(!l.children.length)l.innerHTML='<div style="color:var(--td);font-size:.78rem;line-height:1.5">先让空间者1号扫描现场，证据才会出现在这里。</div>'},
+  renderEvidenceStrip(){const strip=document.getElementById('evidence-strip');if(!strip)return;strip.innerHTML='';Object.values(this.evidenceBook).forEach(e=>{const used=Object.values(this.shownE).some(list=>list.includes(e.id));const c=document.createElement('div');c.className=`ev-chip${used?' used':''}`;c.innerHTML=`${e.img?`<img src="${e.img}">`:''}${e.icon} ${e.name}`;c.onclick=()=>this.showE(e.id);strip.appendChild(c)});},
+  renderEvidenceBoard(){const b=document.getElementById('evidence-board');if(!b)return;b.innerHTML='';Object.values(this.evidenceBook).forEach(e=>{const used=Object.values(this.shownE).some(list=>list.includes(e.id));const c=document.createElement('div');c.className=`ev-card${used?' used':''}`;c.innerHTML=`${e.img?`<div class="ev-art"><img src="${e.img}" alt=""><div class="ev-label">${e.icon} ${e.name}</div></div>`:''}<div class="ev-top"><span class="ev-name">${e.icon} ${e.name}</span><span class="ev-phase">R${e.phase}</span></div><p>${e.desc}</p>`;c.onclick=()=>this.showE(e.id);b.appendChild(c)});if(!b.children.length)b.innerHTML='<div class="ev-card"><div class="ev-name">尚无证据</div><p>先完成现场搜查，证据会以图片卡形式出现在这里。</p></div>'},
+  renderPressure(){
+    const panel=document.getElementById('pressure-panel');if(!panel)return;
+    panel.innerHTML=Object.keys(SUS).map(id=>{
+      const v=this.pressure[id]||0;
+      return `<div class="pressure-card">
+        <div class="pressure-top"><span>${SUS[id].name}</span><span>${v}%</span></div>
+        <div class="pressure-track"><div class="pressure-fill" style="width:${v}%"></div></div>
+        <div class="pressure-note">${this.pressureLine(id)}</div>
+      </div>`;
+    }).join('');
+    this.renderSuspicionHeat();
+  },
+  suspicionHeat(){
+    const counts={moran:0,lila:0,zero:0};
+    this.contradictions.forEach(c=>{if(counts[c.who]!=null)counts[c.who]+=1});
+    const heat={};
+    Object.keys(SUS).forEach(id=>{
+      heat[id]=Math.min(100,Math.round((this.pressure[id]||0)*.62 + counts[id]*12 + (this.shownE[id]?.length||0)*4));
+    });
+    return heat;
+  },
+  renderSuspicionHeat(){
+    const board=document.getElementById('suspicion-board');if(!board)return;
+    const heat=this.suspicionHeat();
+    board.innerHTML=Object.keys(SUS).map(id=>`<div class="heat-row">
+      <span class="heat-name">${SUS[id].name}</span>
+      <span class="heat-track"><span class="heat-fill" style="width:${heat[id]}%"></span></span>
+      <span>${heat[id]}</span>
+    </div>`).join('');
+  },
+  recordContradiction({who,tag,text}){
+    const id=`${who}-${tag}-${text}`.slice(0,120);
+    if(this.contradictions.some(c=>c.id===id))return;
+    this.contradictions.unshift({id,who,tag,text,phase:this.phase,round:this.round+1});
+    this.contradictions=this.contradictions.slice(0,8);
+    this.renderLogicBoard();this.renderSuspicionHeat();
+  },
+  renderLogicBoard(){
+    const board=document.getElementById('logic-board');if(!board)return;
+    if(!this.contradictions.length){
+      board.innerHTML='<div class="logic-empty">追问或甩证据后，AI助手会把可疑矛盾整理成卡片。</div>';
+      return;
+    }
+    board.innerHTML=this.contradictions.map(c=>`<div class="logic-card">
+      <div class="logic-top"><span class="logic-who">${esc(SUS[c.who]?.name||'AI助手')}</span><span class="logic-tag">R${c.phase}-${c.round} · ${esc(c.tag)}</span></div>
+      <p>${esc(c.text)}</p>
+    </div>`).join('');
+  },
+  renderRoundtable(who='圆桌记录',text='等待下一步盘问。',type='sys'){
+    const speakingId=Object.values(SUS).find(s=>s.name===who)?.id;
+    if(type==='sus'&&speakingId)this.seatLines[speakingId]=text;
+    document.querySelectorAll('.seat').forEach(seat=>{
+      const id=seat.dataset.t,v=this.pressure[id]||0;
+      seat.classList.toggle('active',id===this.target);
+      seat.classList.toggle('speaking',id===speakingId);
+      const fill=seat.querySelector('.seat-fill');if(fill)fill.style.width=`${v}%`;
+      const talk=seat.querySelector('.seat-talk');
+      if(talk)talk.innerHTML=this.seatLines[id]?esc(this.seatLines[id]).slice(0,92):'';
+    });
+    const core=document.getElementById('table-core');
+    if(core){
+      const e=this.lastEvidence;
+      core.innerHTML=e?`<div class="table-evidence">${e.img?`<img src="${e.img}" alt="">`:''}<b>${e.icon} ${e.name}</b></div>`:'<div class="table-empty">选择嫌疑人，提出问题，再把证据推到圆桌中央。</div>';
+    }
+    const speech=document.getElementById('active-speech');
+    if(speech){
+      const label=type==='sus'?`${who} 的回答`:type==='par'?who:'圆桌记录';
+      speech.innerHTML=`<div class="who">${label}</div><div class="line">${text}</div>`;
+    }
+  },
+  bindT(){document.querySelectorAll('.tbtn,.seat').forEach(b=>{b.onclick=()=>this.switchT(b.dataset.t)})},
+  upR(){document.getElementById('iround').textContent=`🔍 第 ${Math.min(this.round+1,6)}/6 轮`},
+  setS(t){document.getElementById('istatus').textContent=t},
+  setThinking(on,label='AI生成中…'){
+    this.isThinking=on;
+    const input=document.getElementById('free-question'); if(input)input.disabled=on;
+    document.querySelectorAll('#inter-sb button').forEach(b=>{if(b.id!=='btn-deduce')b.disabled=on});
+    if(on)this.setS(label);
+    this.updateActionButton();
+    this.renderRoundtable();
+  },
+  queueTacticalReview(args){
+    this.tacticalPending=true;
+    this.aiTrace=`${LOCAL_AI.provider} 后台复盘中`;
+    this.renderRoundtable();
+    LOCAL_AI.tacticalReview(args).then(tactical=>{
+      if(tactical){
+        this.recordContradiction({who:args.target,tag:'AI战术复盘',text:tactical});
+        this.addL('par','AI助手',tactical);SFX.pair();
+        this.aiTrace=`${LOCAL_AI.provider} 后台复盘完成`;
+      }
+    }).catch(()=>{}).finally(()=>{
+      this.tacticalPending=false;
+      this.renderRoundtable();
+    });
+  },
+  setInterrogateMode(mode){
+    this.interrogateMode=mode;this.renderMode();this.renderQ();SFX.click();
+    this.setS(`审讯策略：${this.modeLabel(mode)}`);
+  },
+  modeLabel(mode){return {probe:'套话',press:'施压',trap:'设陷'}[mode]||'套话'},
+  renderMode(){
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('sel',b.dataset.mode===this.interrogateMode));
+    const h=document.getElementById('mode-hint');
+    if(h)h.textContent={
+      probe:'套话：回答更长，压力较低，适合先摸时间线。',
+      press:'施压：压力增长更快，角色更防御，适合用关键证据逼供。',
+      trap:'设陷：诱导角色补细节，更容易制造可比对的矛盾卡。'
+    }[this.interrogateMode]||'套话：回答更长，压力较低，适合先摸时间线。';
+  },
+
+  updateActionButton(){
+    const btn=document.getElementById('btn-deduce'); if(!btn)return;
+    if(this.isThinking){btn.disabled=true;btn.textContent='AI生成中';return;}
+    if(this.phase===1){
+      btn.disabled=this.round<4;
+      btn.textContent=this.readySecondSearch?'进入第二轮搜查':'AI总结矛盾';
+    }else{
+      btn.disabled=this.round<4;
+      btn.textContent='做出最终推论';
+    }
+  },
+  primaryInterrogateAction(){
+    if(this.phase===1){
+      if(this.readySecondSearch){this.startSecondSearch();return;}
+      this.assistantSummary();return;
+    }
+    this.deduce();
+  },
+  async assistantSummary(){
+    const seen=Object.values(this.evidenceBook).map(e=>e.name).join('、');
+    this.setS(LOCAL_AI.available?'AI助手正在复盘圆桌矛盾…':'规则助手正在复盘圆桌矛盾…');
+    const started=performance.now();
+    const aiMsg=await LOCAL_AI.assistantReview({phase:this.phase,truth:this.truth,roundNotes:this.roundNotes.slice(-8).join('；'),evidence:seen,pressure:this.pressure});
+    this.aiTrace=aiMsg?`${LOCAL_AI.provider} 总结 ${Math.round(performance.now()-started)}ms`:'规则总结';
+    const msg=aiMsg || `第一轮证据包括 ${seen || '现场物证'}。目前最值得追的是：谁有权限改变系统记录，谁在回避最后五秒，谁把“实验事故”和“密室成立”混在一起。建议返回现场做第二轮复扫。`;
+    this.addL('par','AI助手',msg);SFX.pair();spk(msg,'detective');
+    this.recordContradiction({who:'assistant',tag:this.phase===1?'二轮搜查方向':'终局拼图',text:msg});
+    this.readySecondSearch=true;this.setS('矛盾总结完成：可以开启第二轮搜查');this.updateActionButton();
+  },
+  startSecondSearch(){
+    this.phase=2;this.readySecondSearch=false;this.clues3d=[];this.scanned3d=[];this.askedQ=[];this.round=0;
+    SFX.start();this.explore3D();
+  },
+  pickInterjector(){
+    const suspects=Object.keys(SUS);
+    const others=suspects.filter(id=>id!==this.target);
+    if(SUS[this.truth]&&this.target!==this.truth)return this.truth;
+    if(this.truth==='self'){
+      const pressureOrder=[...others].sort((a,b)=>(this.pressure[b]||0)-(this.pressure[a]||0));
+      return pressureOrder[0]||others[0];
+    }
+    return others[(this.round+this.phase)%others.length];
+  },
+  interjectionFallback(sid,previousSid,key){
+    const lines={
+      moran:{
+        default:'我提醒一句，把技术事故说成私人恩怨很方便，但这会让真正的系统问题被忽略。',
+        blame:'有些人总喜欢把权限问题推给主管，可现场执行的人并不是我一个。',
+        defend:'我承认流程难看，但别把管理失误等同于杀人。'
+      },
+      lila:{
+        default:'你们都在说流程，可那晚真正吓人的不是流程，是舱里出现了不该出现的东西。',
+        blame:'MORAN说得太轻巧了，签字的人永远说自己只是批准。',
+        defend:'我可以害怕，可以逃跑，但这不代表我有办法打开那扇门。'
+      },
+      zero:{
+        default:'圆桌上最容易撒谎的是情绪，最不容易撒谎的是门禁队列。',
+        blame:'如果有人能改实验阈值，就别只盯着剪掉的五秒。',
+        defend:'系统记录没有显示我进过C-7，这一点谁都改不了。'
+      }
+    };
+    const mode=this.truth===sid?'blame':previousSid===sid?'defend':'default';
+    return lines[sid]?.[mode]||lines[sid]?.default||'这句话听起来太顺了，顺到像是提前准备好的。';
+  },
+  async roundtableInterject(question,key,previousReply,evidence){
+    const sid=this.pickInterjector(); if(!sid)return;
+    this.setS(`${SUS[sid].name} 插话中…`);
+    const history=this.roundNotes.slice(-6).join('；');
+    const started=performance.now();
+    let line=await LOCAL_AI.interjectReply({speaker:sid,previousSpeaker:SUS[this.target].name,previousReply,question,evidence,truth:this.truth,phase:this.phase,history});
+    const usedAi=!!(line&&line.length>=10);
+    if(!usedAi)line=this.interjectionFallback(sid,this.target,key);
+    this.aiTrace=usedAi?`${LOCAL_AI.provider} 插话 ${Math.round(performance.now()-started)}ms`:'规则兜底插话';
+    this.roundNotes.push(`${SUS[sid].name}插话：${line}`);
+    this.addL('sus',SUS[sid].name,line,SUS[sid].img);
+    SFX.pair();
+  },
+  async askFree(){
+    if(this.isThinking)return;
+    const input=document.getElementById('free-question'); const text=input.value.trim();
+    if(!text)return; input.value='';
+    if(this.interrogateMode==='press'&&!this.spendToken('施压提问'))return;
+    this.setThinking(true,'供词生成中…');
+    const key=this.detectQuestionKey(text);
+    this.addL('sys','自由追问',`"${text}"`);
+    const q={id:`free-${Date.now()}`,key,text};
+    const evUsed=this.shownE[this.target]||[];
+    const evidence=evUsed.map(id=>this.evidenceBook[id]?.desc||this.evidenceBook[id]?.name).filter(Boolean).join('；');
+    this.setS(LOCAL_AI.provider==='deepseek'?'DeepSeek Flash 正在生成供词…':LOCAL_AI.available?'本地小模型正在生成供词…':'规则角色正在回答…');
+    const history=this.roundNotes.slice(-6).join('；');
+    const started=performance.now();
+    let reply=await LOCAL_AI.suspectReply({suspect:this.target,question:text,key,evidence,truth:this.truth,phase:this.phase,pressure:this.pressure[this.target]||0,history,mode:this.interrogateMode});
+    const usedAi=!!(reply&&reply.length>=12);
+    if(!usedAi) reply=this.personaReply(this.target,q,evUsed);
+    this.aiTrace=usedAi?`${LOCAL_AI.provider} 供词 ${Math.round(performance.now()-started)}ms`:'规则兜底供词';
+    this.addL('sus',SUS[this.target].name,reply,SUS[this.target].img);spk(reply,this.target);
+    this.roundNotes.push(`问${SUS[this.target].name}：${text} / 答：${reply}`);
+    this.applyQuestionPressure(this.target,key,evUsed,text);
+	    this.recordContradiction({who:this.target,tag:this.logicTag(key),text:this.freeAnalysis(text,key)});
+	    this.enableConfront(this.target,reply,text,key,evidence);
+	    this.fireDualAdvisors({who:SUS[this.target].name,reply,pressure:this.pressure[this.target]||0});
+	    this.round++;this.upR();this.updateActionButton();
+	    this.setThinking(false);
+    if(this.phase===1&&this.round>=4)this.setS('可以让AI助手总结矛盾。');
+    else if(this.phase===2&&this.round>=4)this.setS('可以做最终推断了。');
+    else this.setS('继续自由追问，或切换嫌疑人。');
+  },
+  detectQuestionKey(text){
+    if(/哪里|在哪|时间|不在场|23/.test(text))return'location';
+    if(/联系|消息|最后|见/.test(text))return'last';
+    if(/监控|录像|五秒|剪/.test(text))return'cam';
+    if(/动机|矛盾|争吵|署名|项目|算力/.test(text))return'motive';
+    if(/协议|实验|执行|决定/.test(text))return'exp';
+    if(/害怕|Yuki|死者/.test(text))return'yuki';
+    if(/密室|门|进入|离开/.test(text))return'locked';
+    return'final';
+  },
+  freeAnalysis(text,key){
+    const shown=(this.shownE[this.target]||[]).map(id=>this.evidenceBook[id]?.name).filter(Boolean);
+    const p=this.pressure[this.target]||0;
+    const extra=p>=55?'这段供词已经出现防御反应，下一步要用第二轮物证确认。':shown.length?'证据已经推上圆桌，但还需要对照时间线，不要急着定罪。':'先让他给出完整时间线，再甩证据会更有效。';
+    return `这次追问命中了“${key}”线索槽。${shown.length?`圆桌证据：${shown.join('、')}。`:''}${extra}`;
+  },
+  logicTag(key){
+    return {location:'时间线',last:'最后联系',cam:'监控缺口',motive:'动机矛盾',exp:'实验权限',yuki:'死者状态',locked:'密室机制',evidence:'证据反应',final:'最终隐瞒'}[key]||'自由追问';
+  },
+  bindFreeQuestion(){
+    const input=document.getElementById('free-question');
+    if(input&&!input.dataset.bound){
+      input.dataset.bound='1';
+      input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();this.askFree();}});
+    }
+  },
+
+  deduce(){
+    this.finalPick={responsibility:null,mechanism:null,proof:null};
+    S.switch('deduce');this.renderDeduction();
+    spk('最终审判开始。不要只指认一个人，把责任核心、密室机制和关键证据一起拼出来。','detective');
+  },
+  renderDeduction(){
+    const g=document.getElementById('dgrid');if(!g)return;
+    const proofCards=Object.values(this.evidenceBook);
+    const fallback=EV.map(e=>({...e,phase:1,img:ZONE_ART[e.zone]}));
+    const proofs=proofCards.length?proofCards:fallback;
+    const responsibility=Object.values(CASE_ENDINGS);
+    const mechanisms=Object.values(CASE_MECHANISMS);
+    const logic=this.contradictions.length
+      ? this.contradictions.slice(0,6).map(c=>`<div class="logic-card">
+        <div class="logic-top"><span class="logic-who">${esc(SUS[c.who]?.name||'AI助手')}</span><span class="logic-tag">R${c.phase}-${c.round} · ${esc(c.tag)}</span></div>
+        <p>${esc(c.text)}</p>
+      </div>`).join('')
+      : '<div class="logic-empty">本局还没有沉淀矛盾卡。可以回到圆桌多问问题、甩证据，再做最终审判。</div>';
+    const makeCard=(kind,item,extra='')=>{
+      const selected=this.finalPick[kind]===item.id;
+      return `<button class="dcard ${selected?'sel':''} ${extra}" onclick="G.selectTheory('${kind}','${item.id}')">
+        ${item.img?`<img src="${item.img}" alt="">`:''}
+        <div class="di">${item.icon||'📎'}</div>
+        <div class="dn">${item.name||item.title}</div>
+        <div class="dh">${item.hint||item.desc||item.summary||''}</div>
+      </button>`;
+    };
+    const complete=this.finalPick.responsibility&&this.finalPick.mechanism&&this.finalPick.proof;
+    const pickedProof=proofs.find(p=>p.id===this.finalPick.proof);
+    g.innerHTML=`<div class="deduce-board">
+      <section class="deduce-section">
+        <h3>圆桌矛盾摘录</h3>
+        <div class="deduce-logic">${logic}</div>
+      </section>
+      <section class="deduce-section">
+        <h3>1. 责任核心</h3>
+        <div class="deduce-options">${responsibility.map(x=>makeCard('responsibility',x)).join('')}</div>
+      </section>
+      <section class="deduce-section">
+        <h3>2. 密室机制</h3>
+        <div class="deduce-options">${mechanisms.map(x=>makeCard('mechanism',x)).join('')}</div>
+      </section>
+      <section class="deduce-section">
+        <h3>3. 关键证据</h3>
+        <div class="deduce-options">${proofs.map(x=>makeCard('proof',x,'proof')).join('')}</div>
+      </section>
+      <div class="deduce-section">
+        <h3>证据链预览</h3>
+        <p class="dh">责任：${CASE_ENDINGS[this.finalPick.responsibility]?.name||'未选择'} · 机制：${CASE_MECHANISMS[this.finalPick.mechanism]?.name||'未选择'} · 证据：${pickedProof?.name||pickedProof?.title||'未选择'}</p>
+        <div class="deduce-submit"><button class="btn warn" ${complete?'':'disabled'} onclick="G.submitFinalTheory()">提交最终推论</button></div>
+      </div>
+    </div>`;
+  },
+  selectTheory(kind,id){
+    this.finalPick={...this.finalPick,[kind]:id};
+    SFX.click();this.renderDeduction();
+  },
+  proofZone(id){
+    return this.evidenceBook[id]?.zone || EV.find(e=>e.id===id)?.zone || id;
+  },
+  submitFinalTheory(){
+    const expected=TRUTH_SOLUTION[this.truth]||TRUTH_SOLUTION.self;
+    const parts={
+      responsibility:this.finalPick.responsibility===expected.responsibility,
+      mechanism:this.finalPick.mechanism===expected.mechanism,
+      proof:expected.proofZones.includes(this.proofZone(this.finalPick.proof))
+    };
+    const score=Object.values(parts).filter(Boolean).length;
+    this.revealTheory(parts,score);
+  },
+  reveal(id){
+    this.finalPick={responsibility:id,mechanism:null,proof:null};
+    this.submitFinalTheory();
+  },
+  revealTheory(parts,score){
+    const pick=CASE_ENDINGS[this.finalPick.responsibility]||CASE_ENDINGS.self;
+    const truthEnding=CASE_ENDINGS[this.truth]||CASE_ENDINGS.self;
+    const expected=TRUTH_SOLUTION[this.truth]||TRUTH_SOLUTION.self;
+    const pickedProof=this.evidenceBook[this.finalPick.proof]||EV.find(e=>e.id===this.finalPick.proof);
+    const expectedZones=expected.proofZones.map(z=>Object.values(this.evidenceBook).find(e=>e.zone===z)?.name || ZONES[z]?.clue?.title || z).join(' / ');
+    const verdict=score>=3?'✅ 完整推理成立':score===2?'⚠️ 接近真相，但证据链缺口仍在':'❌ 推理链断裂';
+    const ok=score>=3;
+    S.switch('reveal');
+    document.getElementById('rv-content').innerHTML=`<h2 class="sct">${ok?truthEnding.title:pick.title}</h2>
+      <img class="ending-art" src="assets/generated/cartoon-mirror-reveal.png" alt="">
+      <div class="verdict ${ok?'ok':'no'}">${verdict}</div>
+      <div class="ending-copy">
+        <p><b>责任核心：</b>${parts.responsibility?'命中':'未命中'}。你选择了 ${pick.name}，本局真相是 ${truthEnding.name}。</p>
+        <p><b>密室机制：</b>${parts.mechanism?'命中':'未命中'}。你选择了 ${CASE_MECHANISMS[this.finalPick.mechanism]?.name||'未选择'}，关键机制应为 ${CASE_MECHANISMS[expected.mechanism]?.name||'未知'}。</p>
+        <p><b>关键证据：</b>${parts.proof?'命中':'未命中'}。你选择了 ${pickedProof?.name||'未选择'}，本局能压实真相的证据方向是：${expectedZones}。</p>
+        ${truthEnding.body.map(p=>`<p>${p}</p>`).join('')}
+        <p><b>本局隐藏真相：</b>${truthEnding.name}。</p>
+        <p>${caseInsight(this.truth)}</p>
+      </div>
+      <p style="color:var(--a);font-weight:700;margin-top:1rem">每次刷新都会重抽真相，二轮线索、圆桌供词和最终证据链都会跟着改变。</p>`;
+    if(ok){SFX.win();spk('完整推理成立。','detective')}else{SFX.lose();spk('推理链还有缺口。','detective')}
+  }
+};
+
+const S={
+  switch(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));const t=document.getElementById('screen-'+id);if(t)t.classList.add('active')},
+  loading(t,ms){S.switch('loading');document.getElementById('loading-text').textContent=t;return new Promise(r=>setTimeout(()=>{S.switch(G.state);r()},ms))}
+};
+
+// Debug skip: ?skip=interrogate 或 ?skip=phase2
+(function(){
+  const p=new URLSearchParams(location.search);
+  if(!p.has('skip'))return;
+  G.resetCase();
+  Object.keys(ZONES).forEach(zid=>{
+    G.clues3d.push(zid);
+    const clue=currentClue(zid);
+    G.evidenceBook[clue.id]={id:clue.id,zone:zid,icon:clue.icon,name:clue.title||clue.name,desc:clue.summary||clue.desc,phase:clue.phase,img:clue.img,tags:clue.tags||[]};
+    if(!G.evidenceFound.includes(clue.id))G.evidenceFound.push(clue.id);
+  });
+  if(p.get('skip')==='phase2'){G.phase=2;G.round=5;G.tokens=3;}
+  G.interrogate();
+})();
+
+window.G = G;
+window.Lab3D = Lab3D;
+window.render_game_to_text = () => JSON.stringify({
+  mode: G.state,
+  robot: Lab3D.robot ? {
+    x: Number(Lab3D.robot.position.x.toFixed(2)),
+    z: Number(Lab3D.robot.position.z.toFixed(2))
+  } : null,
+  scanned: G.scanned3d,
+  evidence: G.clues3d,
+  evidenceFound: G.evidenceFound,
+  pressure: G.pressure,
+  suspicionHeat: G.suspicionHeat(),
+  broken: G.broken,
+  aiProvider: LOCAL_AI.provider,
+  aiTrace: G.aiTrace,
+  interrogateMode: G.interrogateMode,
+  isThinking: G.isThinking,
+  tacticalPending: G.tacticalPending,
+  roundNotes: G.roundNotes.slice(-5),
+  contradictions: G.contradictions.slice(0,5),
+  seatLines: G.seatLines,
+  caseSeed: G.caseSeed,
+  truthDeckLeft: G.truthDeckLeft,
+  nearest: Lab3D.currentNear,
+  target: G.target,
+  phase: G.phase,
+  truth: G.truth,
+  round: G.round,
+  finalPick: G.finalPick,
+  endings: Object.keys(CASE_ENDINGS),
+  mechanisms: Object.keys(CASE_MECHANISMS)
+});
+window.advanceTime = (ms=1000/60) => {
+  if(!Lab3D.scene || !Lab3D.camera || !Lab3D.composer) return;
+  const steps = Math.max(1, Math.round(ms / (1000 / 60)));
+  for(let i=0;i<steps;i++) Lab3D.update(1/60, performance.now()*0.001 + i/60);
+  Lab3D.composer.render();
+};
+</script>
+</body>
+</html>
