@@ -105,7 +105,7 @@ assertIncludes('圆桌矛盾摘录', 'final deduction contradiction recap');
 assertIncludes('deduce-logic', 'final deduction logic card layout');
 assertIncludes('完整推理成立', 'full-chain deduction verdict');
 
-if (html.includes('REDACTED_KEY_PLACEHOLDER')) {
+if (/sk-[0-9a-f]{32}/.test(html)) {
   throw new Error('Embedded DeepSeek API key should not remain in the shipped game.');
 }
 
